@@ -2,9 +2,7 @@ package org.example;
 
 import graph.LabeledEdge;
 import graph.StateSpaceGraph;
-import graph.StateVertex;
 import org.jgrapht.Graph;
-import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.dot.DOTImporter;
@@ -12,17 +10,18 @@ import org.jgrapht.nio.dot.DOTImporter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-
 
 public class Main {
 
-
-
     public static void main(String[] args) throws FileNotFoundException {
-       StateSpaceGraph dag = fromDOT(args[0]);
-       dag.print();
+        StateSpaceGraph dag = fromDOT(args[0]);
+//       dag.print();
+
+        List<String> sequence = dag.dfs();
+        for (String s : sequence)
+            System.out.println(s);
     }
 
     /**

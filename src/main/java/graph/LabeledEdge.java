@@ -6,18 +6,18 @@ public class LabeledEdge extends DefaultEdge {
 
     private String label;
     private String src, tgt;
+    private boolean visited;
 
     /**
      * Creates a new Labeled Edge instance.
      *
      * @param label  edge label - operation.
-     * @param src    edge source state
-     * @param tgt    edge target state
      */
     public LabeledEdge(String label) {
         this.label = label;
         this.src = "";
         this.tgt = "";
+        visited = false;
     }
 
     public String getLabel() {
@@ -59,6 +59,21 @@ public class LabeledEdge extends DefaultEdge {
 
     public void setTarget(String tgt) {
         this.tgt = tgt;
+    }
+
+    /**
+     * Marks this edge visited during a search.
+     */
+    public void visit() {
+        visited = true;
+    }
+
+    public boolean visited() {
+        return visited;
+    }
+
+    public void unvisit() {
+        visited = false;
     }
 
     @Override

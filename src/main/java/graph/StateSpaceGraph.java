@@ -2,7 +2,10 @@ package graph;
 
 import org.jgrapht.Graph;
 import org.jgrapht.nio.Attribute;
+import org.jgrapht.traverse.DepthFirstIterator;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class StateSpaceGraph {
@@ -39,6 +42,34 @@ public class StateSpaceGraph {
                 if (e.sameTarget(v))
                     e.setTarget(getState(v));
             }
+    }
+
+    /**
+     * Depth first search algorithm.
+     */
+    public List<String> dfs() {
+        List<String> sequence = new ArrayList<>();
+        DepthFirstIterator<String, LabeledEdge> it = new DepthFirstIterator<>(dag);
+        resetEdges();
+
+        while (it.hasNext()) {
+            String v = it.next();
+            for (LabeledEdge e : dag.edgeSet())
+                if (e.sameSource(v) && !e.visited()) {
+                    sequence.add(e.getLabel());
+                    e.visit();
+                }
+        }
+
+        return sequence;
+    }
+
+    /**
+     * Marks all edges as unvisited.
+     */
+    private void resetEdges() {
+        for (LabeledEdge e : dag.edgeSet())
+            e.unvisit();
     }
 
     /**
