@@ -17,17 +17,17 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
-        StateSpaceGraph dag = fromDOT(args[0]);
-        dag.print();
+        StateSpaceGraph graph = fromDOT(args[0]);
+        graph.print();
 
-        List<String> seq = dag.dfs(); // calls to the DFS algorithm always return the same sequence.
+        List<String> seq = graph.dfs(); // calls to the DFS algorithm always return the same sequence.
         String dfs = "";
         for (String s : seq)
             dfs += s;
         System.out.println(dfs);
 
         try {
-            List<String> seq1 = dag.topSort(); // calls to the DFS algorithm always return the same sequence.
+            List<String> seq1 = graph.topSort(); // calls to the DFS algorithm always return the same sequence.
             String topSort = "";
             for (String s : seq1)
                 topSort += s;
