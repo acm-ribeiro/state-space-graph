@@ -1,6 +1,10 @@
 package org.example;
 
+import graph.LabeledEdge;
+import graph.StateSpaceGraph;
+import graph.StateVertex;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.dot.DOTImporter;
@@ -11,20 +15,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+
 public class Main {
 
-    private static final String DOT_FILE = "dot_files/OneBitClock.dot";
-    private static final String LABEL = "label";
+
 
     public static void main(String[] args) throws FileNotFoundException {
+       StateSpaceGraph dag = fromDOT(args[0]);
+       dag.print();
+    }
+
+    /**
+     * Imports a graph from a .dot file.
+     *
+     * @param dot file location.
+     */
+    private static StateSpaceGraph fromDOT(String dot) throws FileNotFoundException {
         Graph<String, LabeledEdge> dag = new SimpleDirectedGraph<>(LabeledEdge.class);
 
-        Graph<String, LabeledEdge> result = new SimpleDirectedGraph<>(LabeledEdge.class);
-
         DOTImporter<String, LabeledEdge> dotImporter = new DOTImporter<>();
-        //dotImporter.setVertexWithAttributesFactory(id, label -> new StateVertex(label.toString()));
         dotImporter.setVertexFactory(label -> label);
-        dotImporter.setEdgeWithAttributesFactory(label -> new LabeledEdge(label.get(LABEL).toString()));
+        dotImporter.setEdgeWithAttributesFactory(label -> new LabeledEdge(label.get(StateSpaceGraph.LABEL).toString()));
 
         Map<String, Map<String, Attribute>> attrs = new HashMap<>();
         dotImporter.addVertexAttributeConsumer((p, a) -> {
@@ -32,17 +43,8 @@ public class Main {
             map.put(p.getSecond(), a);
         });
 
-        dotImporter.importGraph(dag, new FileReader(DOT_FILE));
+        dotImporter.importGraph(dag, new FileReader(dot));
 
-        // VERTEXES
-        System.out.println("vertexes");
-        for (String v : dag.vertexSet())
-            System.out.println(attrs.get(v).get(LABEL));
-
-        // EDGES
-        System.out.println("edges");
-        for(LabeledEdge e : dag.edgeSet()) {
-            System.out.println(e);
-        }
+        return new StateSpaceGraph(dag, attrs);
     }
 }
