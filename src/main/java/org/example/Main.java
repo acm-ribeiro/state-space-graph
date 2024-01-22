@@ -6,6 +6,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.nio.dot.DOTImporter;
+import org.jgrapht.traverse.NotDirectedAcyclicGraphException;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -17,11 +18,24 @@ public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
         StateSpaceGraph dag = fromDOT(args[0]);
-//       dag.print();
+        dag.print();
 
-        List<String> sequence = dag.dfs();
-        for (String s : sequence)
-            System.out.println(s);
+        List<String> seq = dag.dfs(); // calls to the DFS algorithm always return the same sequence.
+        String dfs = "";
+        for (String s : seq)
+            dfs += s;
+        System.out.println(dfs);
+
+        try {
+            List<String> seq1 = dag.topSort(); // calls to the DFS algorithm always return the same sequence.
+            String topSort = "";
+            for (String s : seq1)
+                topSort += s;
+            System.out.println(topSort);
+        } catch (NotDirectedAcyclicGraphException e) {
+            System.err.println("Graph is not acyclic.");
+        }
+
     }
 
     /**
