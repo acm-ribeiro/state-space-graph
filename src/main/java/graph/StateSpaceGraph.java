@@ -1,13 +1,13 @@
 package graph;
 
 import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.nio.Attribute;
 import org.jgrapht.traverse.DepthFirstIterator;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StateSpaceGraph {
 
@@ -15,10 +15,12 @@ public class StateSpaceGraph {
 
     private final Map<String, Map<String, Attribute>> attrs;  // graph attributes; contains the state
     private final Graph<String, LabeledEdge> graph;
+    private final String initialState; // first vertex id
 
-    public StateSpaceGraph(Graph<String, LabeledEdge> graph, Map<String, Map<String, Attribute>> attrs) {
+    public StateSpaceGraph(Graph<String, LabeledEdge> graph, Map<String, Map<String, Attribute>> attrs, String id) {
         this.graph = graph;
         this.attrs = attrs;
+        initialState = id;
         initialiseStateEdges();
     }
 
@@ -82,6 +84,38 @@ public class StateSpaceGraph {
 
         return sequence;
     }
+
+    /**
+     * Returns all paths in the graph starting from the initial state (first vertex).
+     *
+     * @param max    max path length.
+     * @param simple when true it returns all simple (non-self-intersecting) paths.
+     * @return list of graph paths.
+     */
+    public List<List<String>> allPaths(int max, boolean simple) {
+        List<List<String>> duplicates = new ArrayList<>();
+        int size = 0;
+
+        // Add the first vertex id to a set
+        Set<String> initialSet = new HashSet<>(1);
+        initialSet.add(initialState);
+
+        // Retrieving all paths from the first vertex to all vertexes
+        AllDirectedPaths<String, LabeledEdge> p = new AllDirectedPaths<>(graph);
+        List<GraphPath<String, LabeledEdge>> graphPaths = p.getAllPaths(initialSet, graph.vertexSet(), simple, max);
+
+        for (GraphPath<String, LabeledEdge> path : graphPaths) {
+            List<LabeledEdge> edges = path.getEdgeList();
+            duplicates.add(new ArrayList<>());
+            for (LabeledEdge e : edges)
+                duplicates.get(size).add(e.getLabel());
+            size++;
+        }
+
+        // Removing duplicate paths
+        return duplicates.stream().distinct().toList();
+    }
+
 
     /**
      * Marks all edges as unvisited.

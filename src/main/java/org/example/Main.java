@@ -13,13 +13,28 @@ import java.io.FileReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
         StateSpaceGraph graph = fromDOT(args[0]);
-        graph.print();
+        testAllPaths(graph, 5);
+    }
 
+    private static void testAllPaths(StateSpaceGraph graph, int max) {
+        List<List<String>> paths = graph.allPaths(max, true);
+
+        System.out.println("unique paths = " + paths.size());
+
+        for (List<String> ls : paths) {
+            for (String s : ls)
+                System.out.print(s + " ");
+            System.out.println();
+        }
+    }
+
+    private static void testSorts(StateSpaceGraph graph) {
         List<String> seq = graph.dfs(); // calls to the DFS algorithm always return the same sequence.
         String dfs = "";
         for (String s : seq)
@@ -35,7 +50,6 @@ public class Main {
         } catch (NotDirectedAcyclicGraphException e) {
             System.err.println("Graph is not acyclic.");
         }
-
     }
 
     /**
@@ -50,14 +64,21 @@ public class Main {
         dotImporter.setVertexFactory(label -> label);
         dotImporter.setEdgeWithAttributesFactory(label -> new LabeledEdge(label.get(StateSpaceGraph.LABEL).toString()));
 
+        AtomicBoolean found = new AtomicBoolean(false);
+        final String[] firstId = {""};
+
         Map<String, Map<String, Attribute>> attrs = new HashMap<>();
         dotImporter.addVertexAttributeConsumer((p, a) -> {
             Map<String, Attribute> map = attrs.computeIfAbsent(p.getFirst(), k -> new HashMap<>());
             map.put(p.getSecond(), a);
+            // Saving the first vertex id
+            if (!found.get()) {
+                firstId[0] = p.getFirst();
+                found.set(true);
+            }
         });
-
         dotImporter.importGraph(dag, new FileReader(dot));
 
-        return new StateSpaceGraph(dag, attrs);
+        return new StateSpaceGraph(dag, attrs, firstId[0]);
     }
 }
