@@ -1,5 +1,4 @@
 import graph.StateSpaceGraph;
-import graph.Vertex;
 import graph.exceptions.EdgeCapacityReachedException;
 import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.VertexNotFoundException;

@@ -12,13 +12,13 @@ public class ReadGraphTests {
     @Test
     public void test_graph_vertex_read() {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        assert (g.getNumVertices() == 25);
+        assert (g.getNumVertices() == 26); // 25 without the super sink
     }
 
     @Test
     public void test_graph_edge_read() {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        assert (g.getNumEdges() == 66);
+        assert (g.getNumEdges() == 68);
     }
 
     @Test

@@ -9,6 +9,8 @@ import parser.VisitorOrientedParser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.Map.Entry;
+
 
 public class StateSpaceGraph {
 
@@ -18,6 +20,8 @@ public class StateSpaceGraph {
     private static final String SPACE = " ";
     private static final String NOT_FOUND = "File %s not found.\n";
 
+    private static final long SUPER_SINK_ID = 999999999999999999L;
+
     private VisitorOrientedParser parser;
 
     private Map<Long, State> vertexes;
@@ -25,14 +29,14 @@ public class StateSpaceGraph {
     private Map<Long, List<Long>> graph;
     private long initialState;
 
-
-    public StateSpaceGraph(String fileName) {
+    public StateSpaceGraph (String fileName) {
         parser = new VisitorOrientedParser();
         vertexes = new HashMap<>();
         edges = new HashMap<>();
         graph = new HashMap<>();
         populateVertices(fileName);
         populateEdges(fileName);
+        addSuperSink();
     }
 
     /**
@@ -200,7 +204,9 @@ public class StateSpaceGraph {
                 line = sc.nextLine();
                 if (isDescription(line) && !line.contains(EDGE_CHAR)) { // this line represents a vertex definition
                     id = processVertex(line);
-                    if(firstVertex == 0) {
+
+                    // storing the initial state id
+                    if (firstVertex == 0) {
                         initialState = id;
                         firstVertex++;
                     }
@@ -243,6 +249,11 @@ public class StateSpaceGraph {
         return line.contains(EDGE_CHAR) || line.contains(LABEL);
     }
 
+    /**
+     * Processes a line containing an edge description.
+     *
+     * @param edgeLine the line
+     */
     private void processEdge(String edgeLine) {
         long src = Long.parseLong(edgeLine.split(EDGE_CHAR)[0]);
         long tgt = Long.parseLong(edgeLine.split(EDGE_CHAR)[1].trim().split(SPACE)[0]);
@@ -254,6 +265,7 @@ public class StateSpaceGraph {
 
     /**
      * Processes a line containing a vertex description.
+     *
      * @param vertexLine the line
      * @return the vertex id; currently used to store the initial vertex.
      */
@@ -265,6 +277,13 @@ public class StateSpaceGraph {
         return id;
     }
 
+    /**
+     * Adds a new vertex to the graph and the vertexes' collection.
+     *
+     * @param id  vertex id
+     * @param s   state
+     * @pre !hasVertex(id)
+     */
     private void addVertex(long id, State s) {
         if (!graph.containsKey(id)) {
             List<Long> adjList = new ArrayList<>();
@@ -287,6 +306,30 @@ public class StateSpaceGraph {
         graph.get(src).add(tgt);
         String id = getEdgeId(src, tgt);
         edges.put(id, new Edge(src, tgt, label));
+    }
+
+    /**
+     * Adds a super sink vertex to the graph.
+     * A super sink is a vertex with no outgoing edges and all the incoming edges' sources are
+     * from final state vertices.
+     */
+    private void addSuperSink() {
+        // Finding all final states
+        List<Long> finalStates = new ArrayList<>();
+        for(Entry<Long, List<Long>> entry : graph.entrySet())
+            if(entry.getValue().isEmpty())
+                finalStates.add(entry.getKey());
+
+        // Adding the super sink and all edges from all the final states to the super sink.
+        graph.put(SUPER_SINK_ID, new ArrayList<>());
+        vertexes.put(SUPER_SINK_ID, new State(null));
+        List<Long> adjacencyList;
+
+        for (Long finalState : finalStates) {
+            adjacencyList = graph.get(finalState);
+            adjacencyList.add(SUPER_SINK_ID);
+            edges.put(getEdgeId(finalState, SUPER_SINK_ID), new Edge(finalState, SUPER_SINK_ID, "sink"));
+        }
     }
 
 
