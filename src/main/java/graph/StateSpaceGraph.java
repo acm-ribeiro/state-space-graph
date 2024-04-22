@@ -1,6 +1,9 @@
 package graph;
 
 import domain.State;
+import graph.exceptions.EdgeCapacityReachedException;
+import graph.exceptions.EdgeNotFoundException;
+import graph.exceptions.VertexNotFoundException;
 import parser.VisitorOrientedParser;
 
 import java.io.File;
@@ -22,7 +25,6 @@ public class StateSpaceGraph {
     private Map<String, Edge> edges;
     private Map<Long, List<Long>> graph;
 
-    private int numVertices, numEdges;
 
     public StateSpaceGraph(String fileName) {
         parser = new VisitorOrientedParser();
@@ -47,8 +49,32 @@ public class StateSpaceGraph {
         return graph.get(id);
     }
 
-    public State getVertex(Long id) {
-        return vertexes.get(id);
+    /**
+     * Returns the vertex with the given id.
+     *
+     * @param id  vertex id.
+     * @return vertex.
+     * @throws VertexNotFoundException when the vertex is not in the graph.
+     */
+    public State getVertex(long id) throws VertexNotFoundException {
+        if(vertexes.containsKey(id))
+            return vertexes.get(id);
+        else
+            throw new VertexNotFoundException(id);
+    }
+
+    /**
+     * Returns the edge with the given id.
+     *
+     * @param id edge's id
+     * @return edge
+     * @throws EdgeNotFoundException when the edge is not in the graph.
+     */
+    public Edge getEdge(String id) throws EdgeNotFoundException {
+        if (edges.containsKey(id))
+            return edges.get(id);
+        else
+            throw new EdgeNotFoundException(id);
     }
 
     /**
@@ -73,6 +99,34 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Increments the current flow of the edge with the given id, with the given value.
+     *
+     * @param id    edge id.
+     * @param val   increment value.
+     * @throws EdgeCapacityReachedException if the edge does not have enough capacity for the value to increment.
+     * @throws EdgeNotFoundException if the graph does not have the edge with the given id.
+     */
+    public void incEdgeFlow(String id, int val) throws EdgeCapacityReachedException, EdgeNotFoundException {
+        if (edges.containsKey(id)) {
+            if (!edges.get(id).incFlow(val))
+                throw new EdgeCapacityReachedException(id);
+        } else
+            throw new EdgeNotFoundException(id);
+
+    }
+
+    /**
+     * Returns the edge id.
+     *
+     * @param src  edge source vertex id.
+     * @param tgt  edge target vertex id.
+     * @return edge id.
+     */
+    public String getEdgeId(long src, long tgt) {
+        return src  + EDGE_CHAR + tgt;
+    }
+
+    /**
      * Returns the number of edges in the graph, including self-loops.
      *
      * @return number of edges
@@ -80,6 +134,9 @@ public class StateSpaceGraph {
     public int getNumEdges() {
         return edges.size();
     }
+
+
+
 
     /**
      * Populates the vertices data structure from the DOT file.
@@ -123,7 +180,6 @@ public class StateSpaceGraph {
         }
     }
 
-
     /**
      * Checks whether a line from the DOT file is an edge or a vertex description.
      *
@@ -133,7 +189,6 @@ public class StateSpaceGraph {
     private boolean isDescription(String line) {
         return line.contains(EDGE_CHAR) || line.contains(LABEL);
     }
-
 
     private void processEdge(String edgeLine) {
         long src = Long.parseLong(edgeLine.split(EDGE_CHAR)[0]);
@@ -164,6 +219,7 @@ public class StateSpaceGraph {
 
     /**
      * Adds a new labeled edge to the graph.
+     *
      * @param src  edge source
      * @param tgt  edge target
      * @param label edge label
@@ -171,7 +227,7 @@ public class StateSpaceGraph {
      */
     private void addEdge(long src, long tgt, String label) {
         graph.get(src).add(tgt);
-        String id = src  + EDGE_CHAR + tgt;
+        String id = getEdgeId(src, tgt);
         edges.put(id, new Edge(src, tgt, label));
     }
 
