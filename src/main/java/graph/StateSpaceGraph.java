@@ -9,7 +9,6 @@ import parser.VisitorOrientedParser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.util.Map.Entry;
 
 public class StateSpaceGraph {
 
@@ -24,6 +23,7 @@ public class StateSpaceGraph {
     private Map<Long, State> vertexes;
     private Map<String, Edge> edges;
     private Map<Long, List<Long>> graph;
+    private long initialState;
 
 
     public StateSpaceGraph(String fileName) {
@@ -172,6 +172,15 @@ public class StateSpaceGraph {
         return edges.size();
     }
 
+    /**
+     * Returns the graph's initial state id.
+     *
+     * @return initial state id.
+     */
+    public long getInitialState() {
+        return initialState;
+    }
+
 
 
 
@@ -184,11 +193,18 @@ public class StateSpaceGraph {
         try {
             Scanner sc = new Scanner(new File(file));
             String line;
+            long id;
+            int firstVertex = 0;
 
             while (sc.hasNext()) {
                 line = sc.nextLine();
-                if (isDescription(line) && !line.contains(EDGE_CHAR)) // this line represents a vertex definition
-                    processVertex(line);
+                if (isDescription(line) && !line.contains(EDGE_CHAR)) { // this line represents a vertex definition
+                    id = processVertex(line);
+                    if(firstVertex == 0) {
+                        initialState = id;
+                        firstVertex++;
+                    }
+                }
             }
             sc.close();
         } catch (FileNotFoundException e) {
@@ -236,12 +252,17 @@ public class StateSpaceGraph {
             addEdge(src, tgt, label);
     }
 
-    private void processVertex(String vertexLine) {
-        //System.out.println(vertexLine);
+    /**
+     * Processes a line containing a vertex description.
+     * @param vertexLine the line
+     * @return the vertex id; currently used to store the initial vertex.
+     */
+    private long processVertex(String vertexLine) {
         long id = Long.parseLong(vertexLine.split(SPACE)[0]);
         String stateStr = vertexLine.split(QUOTE)[1];
-
         addVertex(id, parser.parse(stateStr));
+
+        return id;
     }
 
     private void addVertex(long id, State s) {

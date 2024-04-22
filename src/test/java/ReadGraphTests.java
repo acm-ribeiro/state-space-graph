@@ -32,4 +32,10 @@ public class ReadGraphTests {
         assert(adjacencyList.contains(-8814944471661943105L));
     }
 
+    @Test
+    public void initial_state() {
+        StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
+        assert(g.getInitialState() == INITIAL_VERTEX_ID);
+    }
+
 }
