@@ -3,8 +3,6 @@ import graph.exceptions.EdgeCapacityReachedException;
 import graph.exceptions.EdgeNotFoundException;
 import org.junit.Test;
 
-import java.util.List;
-
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
