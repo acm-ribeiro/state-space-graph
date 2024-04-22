@@ -4,9 +4,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
-    <artifactId>tla-tester</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>magma</groupId>
+    <artifactId>state-space-graph</artifactId>
+    <version>1.0</version>
+
+    <!-- Add dependencies from github repositories -->
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <properties>
         <maven.compiler.source>18</maven.compiler.source>
@@ -15,20 +23,26 @@
     </properties>
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core -->
         <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <version>1.5.2</version>
+            <groupId>com.github.acm-ribeiro</groupId>
+            <artifactId>tla-state-parser</artifactId>
+            <version>c04f747c28</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.jgrapht/jgrapht-io -->
+        <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
         <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-io</artifactId>
-            <version>1.5.2</version>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

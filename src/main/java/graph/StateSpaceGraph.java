@@ -1,135 +1,203 @@
 package graph;
 
-import org.jgrapht.Graph;
-import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.AllDirectedPaths;
-import org.jgrapht.nio.Attribute;
-import org.jgrapht.traverse.DepthFirstIterator;
-import org.jgrapht.traverse.TopologicalOrderIterator;
+import domain.State;
+import parser.VisitorOrientedParser;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class StateSpaceGraph {
 
-    public static final String LABEL = "label";
+    private static final String EDGE_CHAR = " -> ";
+    private static final String LABEL = "label=";
+    private static final String QUOTE = "\"";
+    private static final String SPACE = " ";
+    private static final String NOT_FOUND = "File %s not found.\n";
 
-    private final Map<String, Map<String, Attribute>> attrs;  // graph attributes; contains the state
-    private final Graph<String, LabeledEdge> graph;
-    private final String initialState; // first vertex id
+    private VisitorOrientedParser parser;
 
-    public StateSpaceGraph(Graph<String, LabeledEdge> graph, Map<String, Map<String, Attribute>> attrs, String id) {
-        this.graph = graph;
-        this.attrs = attrs;
-        initialState = id;
-        initialiseStateEdges();
+    private Map<Long, State> vertexes;
+    private Map<String, Edge> edges;
+    private Map<Long, List<Long>> graph;
+
+    private int numVertices, numEdges;
+
+    public StateSpaceGraph(String fileName) {
+        parser = new VisitorOrientedParser();
+        vertexes = new HashMap<>();
+        edges = new HashMap<>();
+        graph = new HashMap<>();
+        populateVertices(fileName);
+        populateEdges(fileName);
     }
 
     /**
-     * Gets the state of vertex v.
+     * Checks whether the graph has the vertex with the given id.
      *
-     * @param v vertex identifier.
-     * @return state.
+     * @param id vertex id.
+     * @return true if the graph contains a vertex with the given id; false otherwise.
      */
-    public String getState(String v) {
-        return attrs.get(v).get(LABEL).toString();
+    public boolean hasVertex(Long id) {
+        return graph.containsKey(id) && vertexes.containsKey(id);
+    }
+
+    public List<Long> getVertexOutgoingEdges(Long id) {
+        return graph.get(id);
+    }
+
+    public State getVertex(Long id) {
+        return vertexes.get(id);
     }
 
     /**
-     * Initialises the edge source and target with the corresponding states based on the vertex id's.
+     * Checks whether the graph contains an edge from the vertex src to vertex tgt.
+     *
+     * @param src source vertex id
+     * @param tgt target vertex id
+     * @return true if there is an edge from src to tgt; false otherwise.
+     * @pre hasVertex(src) && hasVertex(tgt)
      */
-    private void initialiseStateEdges() {
-        for (String v : graph.vertexSet())
-            for (LabeledEdge e : graph.edgeSet()) {
-                if (e.sameSource(v))
-                    e.setSource(getState(v));
-                if (e.sameTarget(v))
-                    e.setTarget(getState(v));
+    public boolean hasEdge(Long src, Long tgt) {
+        return graph.get(src).contains(tgt);
+    }
+
+    /**
+     * Returns the number of vertices in the graph.
+     *
+     * @return number of vertices
+     */
+    public int getNumVertices() {
+        return vertexes.size();
+    }
+
+    /**
+     * Returns the number of edges in the graph, including self-loops.
+     *
+     * @return number of edges
+     */
+    public int getNumEdges() {
+        return edges.size();
+    }
+
+    /**
+     * Populates the vertices data structure from the DOT file.
+     *
+     * @param file DOT file location.
+     */
+    private void populateVertices(String file) {
+        try {
+            Scanner sc = new Scanner(new File(file));
+            String line;
+
+            while (sc.hasNext()) {
+                line = sc.nextLine();
+                if (isDescription(line) && !line.contains(EDGE_CHAR)) // this line represents a vertex definition
+                    processVertex(line);
             }
+            sc.close();
+        } catch (FileNotFoundException e) {
+            System.err.printf(NOT_FOUND, file);
+        }
+
     }
 
     /**
-     * Edge-coverage depth first search algorithm.
-     */
-    public List<String> dfs() {
-        List<String> sequence = new ArrayList<>();
-        resetEdges();
-        DepthFirstIterator<String, LabeledEdge> it = new DepthFirstIterator<>(graph);
-
-        while (it.hasNext()) {
-            String v = it.next();
-            for (LabeledEdge e : graph.edgeSet())
-                if (e.sameSource(v) && !e.visited()) {
-                    sequence.add(e.getLabel());
-                    e.visit();
-                }
-        }
-
-        return sequence;
-    }
-
-    public List<String> topSort() {
-        List<String> sequence = new ArrayList<>();
-        resetEdges();
-
-        TopologicalOrderIterator<String, LabeledEdge> it = new TopologicalOrderIterator<>(graph);
-
-        while (it.hasNext()) {
-            String v = it.next();
-            for (LabeledEdge e : graph.edgeSet())
-                if (e.sameSource(v) && !e.visited()) {
-                    sequence.add(e.getLabel());
-                    e.visit();
-                }
-        }
-
-        return sequence;
-    }
-
-    /**
-     * Returns all paths in the graph starting from the initial state (first vertex).
+     * Populates the edges data structure from the DOT file.
      *
-     * @param max    max path length.
-     * @param simple when true it returns all simple (non-self-intersecting) paths.
-     * @return list of graph paths.
+     * @param file DOT file location
      */
-    public List<List<String>> allPaths(int max, boolean simple) {
-        List<List<String>> duplicates = new ArrayList<>();
-        int size = 0;
+    private void populateEdges(String file) {
+        try {
+            Scanner sc = new Scanner(new File(file));
+            String line;
+            while (sc.hasNext()) {
+                line = sc.nextLine();
+                if (isDescription(line) && line.contains(EDGE_CHAR)) // this line represents an edge definition
+                    processEdge(line);
+            }
+            sc.close();
+        } catch (FileNotFoundException e) {
+            System.err.printf(NOT_FOUND, file);
+        }
+    }
 
-        // Add the first vertex id to a set
-        Set<String> initialSet = new HashSet<>(1);
-        initialSet.add(initialState);
 
-        // Retrieving all paths from the first vertex to all vertexes
-        AllDirectedPaths<String, LabeledEdge> p = new AllDirectedPaths<>(graph);
-        List<GraphPath<String, LabeledEdge>> graphPaths = p.getAllPaths(initialSet, graph.vertexSet(), simple, max);
+    /**
+     * Checks whether a line from the DOT file is an edge or a vertex description.
+     *
+     * @param line line to check
+     * @return true if the line is an edge or a vertex description.
+     */
+    private boolean isDescription(String line) {
+        return line.contains(EDGE_CHAR) || line.contains(LABEL);
+    }
 
-        for (GraphPath<String, LabeledEdge> path : graphPaths) {
-            List<LabeledEdge> edges = path.getEdgeList();
-            duplicates.add(new ArrayList<>());
-            for (LabeledEdge e : edges)
-                duplicates.get(size).add(e.getLabel());
-            size++;
+
+    private void processEdge(String edgeLine) {
+        long src = Long.parseLong(edgeLine.split(EDGE_CHAR)[0]);
+        long tgt = Long.parseLong(edgeLine.split(EDGE_CHAR)[1].trim().split(SPACE)[0]);
+        String label = edgeLine.split(LABEL)[1].split(QUOTE)[1];
+
+        if(!hasEdge(src, tgt))
+            addEdge(src, tgt, label);
+    }
+
+    private void processVertex(String vertexLine) {
+        //System.out.println(vertexLine);
+        long id = Long.parseLong(vertexLine.split(SPACE)[0]);
+        String stateStr = vertexLine.split(QUOTE)[1];
+
+        addVertex(id, parser.parse(stateStr));
+    }
+
+    private void addVertex(long id, State s) {
+        if (!graph.containsKey(id)) {
+            List<Long> adjList = new ArrayList<>();
+            graph.put(id, adjList);
         }
 
-        // Removing duplicate paths
-        return duplicates.stream().distinct().toList();
-    }
-
-
-    /**
-     * Marks all edges as unvisited.
-     */
-    private void resetEdges() {
-        for (LabeledEdge e : graph.edgeSet())
-            e.unvisit();
+        if (!vertexes.containsKey(id))
+            vertexes.put(id, s);
     }
 
     /**
-     * Prints the graph.
+     * Adds a new labeled edge to the graph.
+     * @param src  edge source
+     * @param tgt  edge target
+     * @param label edge label
+     * @pre !hasEdge(src, tgt)
      */
-    public void print() {
-        for (LabeledEdge e : graph.edgeSet())
-            System.out.println(e);
+    private void addEdge(long src, long tgt, String label) {
+        graph.get(src).add(tgt);
+        String id = src  + EDGE_CHAR + tgt;
+        edges.put(id, new Edge(src, tgt, label));
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        List<Long> adjList;
+
+        for (Map.Entry<Long, List<Long>> e : graph.entrySet()) {
+            s.append(e.getKey());
+            s.append("\n  [");
+
+            int counter = 0;
+            adjList = e.getValue();
+            for (Long v : adjList)
+                if (counter == 0) {
+                    s.append(v);
+                    counter++;
+                } else {
+                    s.append(", ");
+                    s.append(v);
+                }
+            s.append("]\n");
+        }
+
+        return s.toString();
     }
 }
