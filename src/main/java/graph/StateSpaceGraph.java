@@ -45,8 +45,45 @@ public class StateSpaceGraph {
         return graph.containsKey(id) && vertexes.containsKey(id);
     }
 
-    public List<Long> getVertexOutgoingEdges(Long id) {
-        return graph.get(id);
+    /**
+     * Returns the given vertex outgoing edges.
+     *
+     * @param src  vertex id.
+     * @return a list of the vertex outgoing edges.
+     * @throws VertexNotFoundException if the vertex src is not in the graph.
+     */
+    public List<Edge> getVertexOutgoingEdges(Long src) throws VertexNotFoundException {
+        if(vertexes.containsKey(src)) {
+            List<Edge> outgoingEdges = new ArrayList<>();
+            List<Long> adjacencyList = graph.get(src);
+
+            if (adjacencyList.isEmpty())
+                return outgoingEdges;
+
+            String edgeId;
+
+            for(Long tgt : adjacencyList) {
+                edgeId = getEdgeId(src, tgt);
+                outgoingEdges.add(edges.get(edgeId));
+            }
+
+            return outgoingEdges;
+        } else
+            throw new VertexNotFoundException(src);
+    }
+
+    /**
+     * Returns a list of vertexes reachable by the given vertex.
+     *
+     * @param src  vertex id.
+     * @return a list of the reachable vertex ids.
+     * @throws VertexNotFoundException if the vertex src is not in the graph.
+     */
+    public List<Long> getReachableVertexes(long src) throws VertexNotFoundException {
+        if(vertexes.containsKey(src))
+            return graph.get(src);
+        else
+            throw new VertexNotFoundException(src);
     }
 
     /**

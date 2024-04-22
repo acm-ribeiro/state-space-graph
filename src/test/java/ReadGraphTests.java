@@ -1,4 +1,5 @@
 import graph.StateSpaceGraph;
+import graph.exceptions.VertexNotFoundException;
 import org.junit.Test;
 
 import java.util.List;
@@ -21,11 +22,11 @@ public class ReadGraphTests {
     }
 
     @Test
-    public void initial_state_edges (){
+    public void initial_state_edges () throws VertexNotFoundException {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
         assert(g.hasVertex(INITIAL_VERTEX_ID));
 
-        List<Long> adjacencyList = g.getVertexOutgoingEdges(INITIAL_VERTEX_ID);
+        List<Long> adjacencyList = g.getReachableVertexes(INITIAL_VERTEX_ID);
         assert(adjacencyList.size() == 2);
         assert(adjacencyList.contains(8756997901130288749L));
         assert(adjacencyList.contains(-8814944471661943105L));

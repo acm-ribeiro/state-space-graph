@@ -1,6 +1,8 @@
 import graph.StateSpaceGraph;
+import graph.Vertex;
 import graph.exceptions.EdgeCapacityReachedException;
 import graph.exceptions.EdgeNotFoundException;
+import graph.exceptions.VertexNotFoundException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertThrows;
@@ -12,9 +14,9 @@ public class GraphOperationTests {
     public static final long INITIAL_VERTEX_ID = 967637665389041036L;
 
     @Test
-    public void test_inc_flow() throws EdgeNotFoundException, EdgeCapacityReachedException {
+    public void test_inc_flow() throws EdgeNotFoundException, EdgeCapacityReachedException, VertexNotFoundException {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        long tgt = g.getVertexOutgoingEdges(INITIAL_VERTEX_ID).get(0);
+        long tgt = g.getReachableVertexes(INITIAL_VERTEX_ID).get(0);
         String edgeId = g.getEdgeId(INITIAL_VERTEX_ID, tgt);
         g.incEdgeFlow(edgeId, 1);
 
@@ -22,9 +24,9 @@ public class GraphOperationTests {
     }
 
     @Test
-    public void test_inc_flow_exception() throws EdgeNotFoundException, EdgeCapacityReachedException {
+    public void test_inc_flow_edge_cap_exception() throws VertexNotFoundException {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        long tgt = g.getVertexOutgoingEdges(INITIAL_VERTEX_ID).get(0);
+        long tgt = g.getReachableVertexes(INITIAL_VERTEX_ID).get(0);
         String edgeId = g.getEdgeId(INITIAL_VERTEX_ID, tgt);
 
         EdgeCapacityReachedException thrown = assertThrows (
@@ -34,7 +36,23 @@ public class GraphOperationTests {
         );
 
         assertTrue(thrown.getMessage().contains(edgeId));
+    }
 
+    @Test
+    public void test_inc_flow_no_vertex_exception() {
+        StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
+
+        VertexNotFoundException thrown = assertThrows (
+                "",
+                VertexNotFoundException.class,
+                () -> {
+                    long tgt = g.getReachableVertexes(1L).get(0);
+                    String edgeId = g.getEdgeId(INITIAL_VERTEX_ID, tgt);
+                    g.incEdgeFlow(edgeId, 5);
+                }
+        );
+
+        assertTrue(thrown.getMessage().contains("1"));
     }
 
 }
