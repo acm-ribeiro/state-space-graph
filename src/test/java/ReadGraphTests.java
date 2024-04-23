@@ -26,7 +26,7 @@ public class ReadGraphTests {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
         assert(g.hasVertex(INITIAL_VERTEX_ID));
 
-        List<Long> adjacencyList = g.getReachableVertexes(INITIAL_VERTEX_ID);
+        List<Long> adjacencyList = g.getReachableVertices(INITIAL_VERTEX_ID);
         assert(adjacencyList.size() == 2);
         assert(adjacencyList.contains(8756997901130288749L));
         assert(adjacencyList.contains(-8814944471661943105L));

@@ -24,14 +24,14 @@ public class StateSpaceGraph {
 
     private VisitorOrientedParser parser;
 
-    private Map<Long, State> vertexes;
+    private Map<Long, State> vertices;
     private Map<String, Edge> edges;
     private Map<Long, List<Long>> graph;
     private long initialState;
 
     public StateSpaceGraph (String fileName) {
         parser = new VisitorOrientedParser();
-        vertexes = new HashMap<>();
+        vertices = new HashMap<>();
         edges = new HashMap<>();
         graph = new HashMap<>();
         populateVertices(fileName);
@@ -46,7 +46,7 @@ public class StateSpaceGraph {
      * @return true if the graph contains a vertex with the given id; false otherwise.
      */
     public boolean hasVertex(Long id) {
-        return graph.containsKey(id) && vertexes.containsKey(id);
+        return graph.containsKey(id) && vertices.containsKey(id);
     }
 
     /**
@@ -57,7 +57,7 @@ public class StateSpaceGraph {
      * @throws VertexNotFoundException if the vertex src is not in the graph.
      */
     public List<Edge> getVertexOutgoingEdges(Long src) throws VertexNotFoundException {
-        if(vertexes.containsKey(src)) {
+        if(vertices.containsKey(src)) {
             List<Edge> outgoingEdges = new ArrayList<>();
             List<Long> adjacencyList = graph.get(src);
 
@@ -77,14 +77,14 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Returns a list of vertexes reachable by the given vertex.
+     * Returns a list of vertices reachable by the given vertex.
      *
      * @param src  vertex id.
      * @return a list of the reachable vertex ids.
      * @throws VertexNotFoundException if the vertex src is not in the graph.
      */
-    public List<Long> getReachableVertexes(long src) throws VertexNotFoundException {
-        if(vertexes.containsKey(src))
+    public List<Long> getReachableVertices(long src) throws VertexNotFoundException {
+        if(vertices.containsKey(src))
             return graph.get(src);
         else
             throw new VertexNotFoundException(src);
@@ -98,8 +98,8 @@ public class StateSpaceGraph {
      * @throws VertexNotFoundException when the vertex is not in the graph.
      */
     public State getVertex(long id) throws VertexNotFoundException {
-        if(vertexes.containsKey(id))
-            return vertexes.get(id);
+        if(vertices.containsKey(id))
+            return vertices.get(id);
         else
             throw new VertexNotFoundException(id);
     }
@@ -136,11 +136,11 @@ public class StateSpaceGraph {
      * @return number of vertices
      */
     public int getNumVertices() {
-        return vertexes.size();
+        return vertices.size();
     }
 
     /**
-     * Increments the current flow of the edge with the given id, with the given value.
+     * Increments the current flow of the edge with the given id, by the given value.
      *
      * @param id    edge id.
      * @param val   increment value.
@@ -185,6 +185,35 @@ public class StateSpaceGraph {
         return initialState;
     }
 
+    /**
+     * Returns the super sink vertex id.
+     *
+     * @return super sink id.
+     */
+    public long getSuperSinkId() {
+        return SUPER_SINK_ID;
+    }
+
+    /**
+     * Returns all vertices that lead to the given target, directly.
+     *
+     * @param tgt target vertex id.
+     * @return a list of vertex ids directly above the given vertex.
+     * @throws VertexNotFoundException when tgt is not in the graph.
+     */
+    public List<Long> getParents(long tgt) throws VertexNotFoundException {
+        if(graph.containsKey(tgt)) {
+            List<Long> parents = new ArrayList<>();
+
+            for(Entry<String, Edge> e : edges.entrySet())
+                if (e.getValue().getTgt() == tgt)
+                    parents.add(e.getValue().getSrc());
+
+            return parents;
+        } else
+            throw new VertexNotFoundException(tgt);
+
+    }
 
 
 
@@ -278,7 +307,7 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Adds a new vertex to the graph and the vertexes' collection.
+     * Adds a new vertex to the graph and the vertices' collection.
      *
      * @param id  vertex id
      * @param s   state
@@ -290,8 +319,8 @@ public class StateSpaceGraph {
             graph.put(id, adjList);
         }
 
-        if (!vertexes.containsKey(id))
-            vertexes.put(id, s);
+        if (!vertices.containsKey(id))
+            vertices.put(id, s);
     }
 
     /**
@@ -315,23 +344,50 @@ public class StateSpaceGraph {
      */
     private void addSuperSink() {
         // Finding all final states
-        List<Long> finalStates = new ArrayList<>();
-        for(Entry<Long, List<Long>> entry : graph.entrySet())
-            if(entry.getValue().isEmpty())
-                finalStates.add(entry.getKey());
+        List<Long> finalStates = getFinalStates();
 
-        // Adding the super sink and all edges from all the final states to the super sink.
-        graph.put(SUPER_SINK_ID, new ArrayList<>());
-        vertexes.put(SUPER_SINK_ID, new State(null));
-        List<Long> adjacencyList;
+        if(!finalStates.isEmpty()) {
+            // Adding the super sink and all edges from all the final states to the super sink.
+            graph.put(SUPER_SINK_ID, new ArrayList<>());
+            vertices.put(SUPER_SINK_ID, new State(null));
+            List<Long> adjacencyList;
 
-        for (Long finalState : finalStates) {
-            adjacencyList = graph.get(finalState);
-            adjacencyList.add(SUPER_SINK_ID);
-            edges.put(getEdgeId(finalState, SUPER_SINK_ID), new Edge(finalState, SUPER_SINK_ID, "sink"));
+            for (Long finalState : finalStates) {
+                adjacencyList = graph.get(finalState);
+                adjacencyList.add(SUPER_SINK_ID);
+                edges.put(getEdgeId(finalState, SUPER_SINK_ID), new Edge(finalState, SUPER_SINK_ID, "sink"));
+            }
         }
     }
 
+    /**
+     * Finds the graph's final states. A final state is a state with the element F set to true.
+     * The only vertex with no outgoing edges is the super sink, and this is not a valid final state.
+     *
+     * @return final states vertex ids.
+     */
+    private List<Long> getFinalStates() { // TODO make private
+        List<Long> finalStates = new ArrayList<>();
+        Long id;
+
+        for(Entry<Long, List<Long>> entry : graph.entrySet()) {
+            id = entry.getKey();
+            if (!isSink(id) && vertices.get(id).isFinalState())
+                finalStates.add(entry.getKey());
+        }
+
+        return finalStates;
+    }
+
+    /**
+     * Checks whether the provided id is the sink id.
+     *
+     * @param id vertex id
+     * @return true if the given id is the sink id; false otherwise.
+     */
+    private boolean isSink(long id) {
+        return id == SUPER_SINK_ID;
+    }
 
     @Override
     public String toString() {

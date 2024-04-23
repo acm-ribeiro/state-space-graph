@@ -26,7 +26,7 @@
         <dependency>
             <groupId>com.github.acm-ribeiro</groupId>
             <artifactId>tla-state-parser</artifactId>
-            <version>c04f747c28</version>
+            <version>f654c5e655</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
@@ -41,6 +41,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

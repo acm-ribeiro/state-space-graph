@@ -51,9 +51,10 @@ public class Edge {
     }
 
     /**
-     * Increments the current flow going through this edge.
+     * Increments the flow going through this edge.
      *
      * @param val value to increment.
+     * @return true if the increment was successful; false otherwise.
      */
     public boolean incFlow (int val) {
         if(flow + val <= capacity) {
@@ -66,6 +67,7 @@ public class Edge {
 
     /**
      * Returns the edge's label.
+     *
      * @return  edge's label.
      */
     public String getLabel() {
