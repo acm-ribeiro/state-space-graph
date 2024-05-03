@@ -51,6 +51,16 @@ public class Edge {
     }
 
     /**
+     * Returns the edge's remaining capacity.
+     * The remaining capacity of an edge is the difference between its total capacity and the current flow value.
+     *
+     * @return remaining capacity.
+     */
+    public int getRemainingCapacity() {
+        return capacity - flow;
+    }
+
+    /**
      * Increments the flow going through this edge.
      *
      * @param val value to increment.

@@ -1,40 +1,48 @@
 package graph;
 
-import domain.Entity;
 import domain.State;
-import domain.StateElement;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class Vertex {
-    private int id;
+
     private State state;
+    private int level;
 
-    public Vertex (int id, State state) {
-        this.id = id;
-        this.state = state;
+    public Vertex(State s) {
+        state = s;
+        level = -1;
     }
 
-    public int getId() {
-        return id;
-    }
-
+    /**
+     * Returns the vertex state.
+     *
+     * @return state
+     */
     public State getState() {
         return state;
     }
 
-    public void stateTest() {
-        List<StateElement> elems = state.getElements();
+    /**
+     * Returns the vertex leve.
+     * @return level
+     */
+    public int getLevel() {
+        return level;
+    }
 
-        for (StateElement elem : elems) {
-            // entities: p, t, pc, f, req, res
-             Map<String, Entity> entities = elem.getEntities();
-             for (Entry<String, Entity> entry : entities.entrySet()) {
-                 // TODO the class entity of the parser needs to check if this is a state entity
-                 // and if it's empty
-             }
-        }
+    /**
+     * Sets the vertex level to the given value.
+     * @param l new level.
+     */
+    public void setLevel (int l) {
+        level = l;
+    }
+
+    /**
+     * Checks whether this level was already visited.
+     *
+     * @return true if the vertex was visited; false otherwise.
+     */
+    public boolean visited () {
+        return level != -1;
     }
 }

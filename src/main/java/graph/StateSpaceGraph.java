@@ -24,7 +24,7 @@ public class StateSpaceGraph {
 
     private VisitorOrientedParser parser;
 
-    private Map<Long, State> vertices;
+    private Map<Long, Vertex> vertices;
     private Map<String, Edge> edges;
     private Map<Long, List<Long>> graph;
     private long initialState;
@@ -97,7 +97,7 @@ public class StateSpaceGraph {
      * @return vertex.
      * @throws VertexNotFoundException when the vertex is not in the graph.
      */
-    public State getVertex(long id) throws VertexNotFoundException {
+    public Vertex getVertex(long id) throws VertexNotFoundException {
         if(vertices.containsKey(id))
             return vertices.get(id);
         else
@@ -215,7 +215,19 @@ public class StateSpaceGraph {
 
     }
 
+    /**
+     * Constructs a level graph for Dinic's algorithm.
+     * The levels of the graph are those obtained by doing a BFS on the source vertex, to label all the levels
+     * of the current flow graph. The level graph consists of all edges which go from L to L+1 in level and have
+     * remaining capacity (flow) > 0.
+     *
+     *
+     */
+    public void buildLevelGraph() {
+        // Stores the vertices' levels
+        Map<Long, Integer> levels = new HashMap<>();
 
+    }
 
     /**
      * Populates the vertices data structure from the DOT file.
@@ -320,7 +332,7 @@ public class StateSpaceGraph {
         }
 
         if (!vertices.containsKey(id))
-            vertices.put(id, s);
+            vertices.put(id, new Vertex(s));
     }
 
     /**
@@ -349,7 +361,7 @@ public class StateSpaceGraph {
         if(!finalStates.isEmpty()) {
             // Adding the super sink and all edges from all the final states to the super sink.
             graph.put(SUPER_SINK_ID, new ArrayList<>());
-            vertices.put(SUPER_SINK_ID, new State(null));
+            vertices.put(SUPER_SINK_ID, new Vertex(new State(null)));
             List<Long> adjacencyList;
 
             for (Long finalState : finalStates) {
@@ -372,7 +384,7 @@ public class StateSpaceGraph {
 
         for(Entry<Long, List<Long>> entry : graph.entrySet()) {
             id = entry.getKey();
-            if (!isSink(id) && vertices.get(id).isFinalState())
+            if (!isSink(id) && vertices.get(id).getState().isFinalState())
                 finalStates.add(entry.getKey());
         }
 
@@ -385,7 +397,7 @@ public class StateSpaceGraph {
      * @param id vertex id
      * @return true if the given id is the sink id; false otherwise.
      */
-    private boolean isSink(long id) {
+    private boolean isSink (long id) {
         return id == SUPER_SINK_ID;
     }
 
