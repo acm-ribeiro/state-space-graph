@@ -27,6 +27,7 @@
             <groupId>com.github.acm-ribeiro</groupId>
             <artifactId>tla-state-parser</artifactId>
             <version>f654c5e655</version>
+            <scope>import</scope>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->

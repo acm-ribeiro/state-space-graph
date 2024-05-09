@@ -2,12 +2,12 @@ package graph;
 
 import domain.State;
 
-public class Vertex {
+public class Node {
 
     private State state;
     private int level;
 
-    public Vertex(State s) {
+    public Node(State s) {
         state = s;
         level = -1;
     }

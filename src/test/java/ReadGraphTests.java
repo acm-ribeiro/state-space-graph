@@ -1,5 +1,5 @@
 import graph.StateSpaceGraph;
-import graph.exceptions.VertexNotFoundException;
+import graph.exceptions.NodeNotFoundException;
 import org.junit.Test;
 
 import java.util.List;
@@ -12,7 +12,7 @@ public class ReadGraphTests {
     @Test
     public void test_graph_vertex_read() {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        assert (g.getNumVertices() == 26); // 25 without the super sink
+        assert (g.getNumNodes() == 26); // 25 without the super sink
     }
 
     @Test
@@ -22,11 +22,11 @@ public class ReadGraphTests {
     }
 
     @Test
-    public void initial_state_edges () throws VertexNotFoundException {
+    public void initial_state_edges () throws NodeNotFoundException {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        assert(g.hasVertex(INITIAL_VERTEX_ID));
+        assert(g.hasNode(INITIAL_VERTEX_ID));
 
-        List<Long> adjacencyList = g.getReachableVertices(INITIAL_VERTEX_ID);
+        List<Long> adjacencyList = g.getReachableNodes(INITIAL_VERTEX_ID);
         assert(adjacencyList.size() == 2);
         assert(adjacencyList.contains(8756997901130288749L));
         assert(adjacencyList.contains(-8814944471661943105L));
@@ -35,7 +35,7 @@ public class ReadGraphTests {
     @Test
     public void initial_state() {
         StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        assert(g.getInitialState() == INITIAL_VERTEX_ID);
+        assert(g.getSource() == INITIAL_VERTEX_ID);
     }
 
 }
