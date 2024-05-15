@@ -1,5 +1,4 @@
 import graph.StateSpaceGraph;
-import graph.exceptions.EdgeNotFoundException;
 import graph.exceptions.NodeNotFoundException;
 import graph.exceptions.UnableToReachSinkException;
 import org.junit.Test;
@@ -8,7 +7,6 @@ import org.junit.jupiter.api.Disabled;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class GraphOperationTests {
@@ -19,32 +17,6 @@ public class GraphOperationTests {
     public static final long INITIAL_NODE_ID = 967637665389041036L;
     private static final Long SUPER_SINK_ID = 999999999999999999L;
 
-    @Test
-    public void test_inc_flow() throws EdgeNotFoundException, NodeNotFoundException {
-        StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-        long tgt = g.getReachableNodes(INITIAL_NODE_ID).get(0);
-        String edgeId = g.getEdgeId(INITIAL_NODE_ID, tgt);
-        g.incEdgeFlow(edgeId, 1);
-
-        assert (g.getEdge(edgeId).getFlow() == 1);
-    }
-
-    @Test
-    public void test_inc_flow_no_vertex_exception() {
-        StateSpaceGraph g = new StateSpaceGraph(TEST_FILE);
-
-        NodeNotFoundException thrown = assertThrows (
-                "",
-                NodeNotFoundException.class,
-                () -> {
-                    long tgt = g.getReachableNodes(1L).get(0);
-                    String edgeId = g.getEdgeId(INITIAL_NODE_ID, tgt);
-                    g.incEdgeFlow(edgeId, 5);
-                }
-        );
-
-        assertTrue(thrown.getMessage().contains("1"));
-    }
 
     @Test
     @Disabled

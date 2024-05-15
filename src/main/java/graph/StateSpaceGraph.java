@@ -88,28 +88,6 @@ public class StateSpaceGraph {
     }
 
     /**
-     * TODO: check if this is needed!!
-     * Returns a list of nodes reachable by the given node.
-     *
-     * @param src node id.
-     * @return a list of the reachable node ids.
-     * @throws NodeNotFoundException if the node src is not in the graph.
-     */
-    public List<Long> getReachableNodes(long src) throws NodeNotFoundException {
-        if (!nodes.containsKey(src))
-            throw new NodeNotFoundException(src);
-
-        List<Edge> nodeEdges = graph.get(src);
-        List<Long> targetIds = new ArrayList<>();
-
-        for (Edge e : nodeEdges)
-            targetIds.add(e.getTgt());
-
-        return targetIds;
-
-    }
-
-    /**
      * Returns the node with the given id.
      *
      * @param id node id.
@@ -154,21 +132,6 @@ public class StateSpaceGraph {
      */
     public int getNumNodes() {
         return nodes.size();
-    }
-
-    /**
-     * Increments the current flow of the edge with the given id, by the given value.
-     *
-     * @param id  edge id.
-     * @param val increment value.
-     * @throws EdgeNotFoundException if the graph does not have the edge with the given id.
-     */
-    public void incEdgeFlow(String id, int val) throws EdgeNotFoundException {
-        if (edges.containsKey(id)) {
-            edges.get(id).incFlow(val);
-        } else
-            throw new EdgeNotFoundException(id);
-
     }
 
     /**
@@ -244,19 +207,14 @@ public class StateSpaceGraph {
          */
         Map<Long, Integer> next;
         int maxFlow = 0;
-        int counter = 1; // TODO remove: iteration counter
 
         while (bfs()) {
             // next is reset in each iteration to allow taking previously forbidden edges
             next = initialiseNodeMap(0);
+            System.out.println(integerMapToString(next, "Next Map (init)"));
             int f = dfs(source, next, INF);
 
             while (f != 0) {
-                // TODO remove
-                System.out.print(counter + ".");
-                System.out.println(levelToString());
-                counter++;
-
                 maxFlow += f;
                 f = dfs(source, next, INF);
             }
@@ -625,16 +583,16 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Returns a textual representation of the level graph constructed during the Dinic's algorithm execution.
+     * Returns a textual representation of the given map structure.
      *
-     * @return string representing the level graph; or the empty string in case the algorithm hasn't been executed.
+     * @return string representing the map structure; or the empty string if map is null.
      */
-    public String levelToString() {
+    public String integerMapToString(Map<Long, Integer> map, String name) {
         if (level != null) {
             StringBuilder s = new StringBuilder();
-            s.append("\n------------- Level Graph -------------\n");
+            s.append("\n------------- "+ name + " -------------\n");
 
-            for (Entry<Long, Integer> e : level.entrySet()) {
+            for (Entry<Long, Integer> e : map.entrySet()) {
                 s.append(e.getKey());
                 s.append(" = ");
                 s.append(e.getValue());
