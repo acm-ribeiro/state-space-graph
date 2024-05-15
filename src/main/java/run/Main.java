@@ -3,6 +3,10 @@ package run;
 import graph.StateSpaceGraph;
 import graph.exceptions.NodeNotFoundException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 public class Main {
     public static void main (String[] args) throws NodeNotFoundException {
         StateSpaceGraph g = new StateSpaceGraph(args[0]);
@@ -13,6 +17,7 @@ public class Main {
 
         System.out.println("max_f = " + maxFlow);
         System.out.println("nodes = " + g.getNumNodes());
-        System.out.println("edges = " +g.getNumEdges());
+        System.out.println("edges = " + g.getNumEdges());
     }
+
 }

@@ -36,6 +36,7 @@ public class StateSpaceGraph {
     private Map<Long, State> nodes;         // nodes by id
     private Map<String, Edge> edges;        // edges by id
     private Map<Long, Integer> level;       // level graph
+
     private Map<Long, List<Edge>> graph;
 
     private long source;                    // source node id
@@ -94,7 +95,7 @@ public class StateSpaceGraph {
      * @return node.
      * @throws NodeNotFoundException when the node is not in the graph.
      */
-    public State getNode(long id) throws NodeNotFoundException {
+    public State getNode(Long id) throws NodeNotFoundException {
         if (nodes.containsKey(id))
             return nodes.get(id);
         else
