@@ -3,21 +3,15 @@ package run;
 import graph.StateSpaceGraph;
 import graph.exceptions.NodeNotFoundException;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
-
 public class Main {
     public static void main (String[] args) throws NodeNotFoundException {
-        StateSpaceGraph g = new StateSpaceGraph(args[0]);
-//        System.out.print(g);
-//        System.out.println(g.edgesToStringCompact());
+        StateSpaceGraph ssg = new StateSpaceGraph(args[0]);
 
-        int maxFlow = g.dinic();
+//        System.out.println(ssg);
+//        System.out.println("---------------------------------------");
+//        System.out.println(ssg.detailedEdges());
 
-        System.out.println("max_f = " + maxFlow);
-        System.out.println("nodes = " + g.getNumNodes());
-        System.out.println("edges = " + g.getNumEdges());
+        System.out.println("max flow = " + ssg.dinic());
     }
 
 }

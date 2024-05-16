@@ -2,129 +2,120 @@ package graph;
 
 public class Edge {
 
-    private String id;              // edge ID
-    private long src, tgt;          // source and target vertices' ID
-    private String label;           // edge label
-    private int capacity, flow;     // edge maximum capacity and current flow
-    private String residual;        // residual edge id
+    private int src, dst;           // edge's source and destination
+    private String label;           // edge's label (operation id)
+    private boolean visited;        // indicates whether the edge was visited
+    private int flow, capacity;     // edge's flow and capacity for Dinic's Algorithm
+    private Edge inverse;           // edge going from dst to src
 
-    public Edge (String id, long src, long tgt, String label, int capacity) {
-        this.id = id;
+    public Edge(int src, int dst, String label, int capacity) {
         this.src = src;
-        this.tgt = tgt;
+        this.dst = dst;
         this.label = label;
+        visited = false;
         this.capacity = capacity;
         flow = 0;
     }
 
     /**
-     * Returns the edge ID.
+     * Returns the edge source node.
      *
-     * @return edge ID.
+     * @return source node id.
      */
-    public String getId() {
-        return id;
-    }
-
-    /**
-     * Sets this edge's residual edge.
-     * The residual edge has capacity 0. It is only used to backtrack, so no flow can go through it.
-     *
-     * @param residualId residual edge's id
-     */
-    public void setResidual (String residualId) {
-        residual = residualId;
-    }
-
-    /**
-     * Returns the edge's residual edge.
-     *
-     * @return residual edge.
-     */
-    public String getResidualId () {
-        return residual;
-    }
-
-    /**
-     * Returns the id of this edge's source vertex.
-     *
-     * @return the source vertex id
-     */
-    public long getSrc () {
+    public int getSrc() {
         return src;
     }
 
     /**
-     * Returns the id of this edge's target vertex.
+     * Sets the inverse edge (going from dst to src).
      *
-     * @return the source target id
+     * @param inverse edge.
      */
-    public long getTgt () {
-        return tgt;
+    public void setInverse(Edge inverse) {
+        this.inverse = inverse;
     }
 
     /**
-     * Returns this edge's maximum capacity.
+     * Returns the edge destination node.
      *
-     * @return edge's maximum capacity.
+     * @return destination node id.
      */
-    public int getCapacity () {
-        return capacity;
+    public int getDst() {
+        return dst;
     }
 
     /**
-     * Returns the current flow going through this edge.
+     * Returns the edge label.
      *
-     * @return current flow value.
+     * @return edge label.
      */
-    public int getFlow () {
-        return flow;
-    }
-
-    /**
-     * Returns the edge's remaining capacity.
-     * The remaining capacity of an edge is the difference between its total capacity and the current flow value.
-     *
-     * @return remaining capacity.
-     */
-    public int getRemainingCapacity () {
-        return capacity - flow;
-    }
-
-    /**
-     * Increments the flow going through this edge.
-     *
-     * @param bottleneck value to increment.
-     * @pre residual != null
-     */
-    public void incFlow (int bottleneck) {
-        flow += bottleneck;
-    }
-
-    /**
-     * Decrements the flow going through this edge.
-     *
-     * @param bottleneck value to decrement.
-     */
-    public void decFlow (int bottleneck) {
-        flow -= bottleneck;
-    }
-
-    /**
-     * Returns the edge's label.
-     *
-     * @return  edge's label.
-     */
-    public String getLabel () {
+    public String getLabel() {
         return label;
     }
 
     /**
-     * Checks whether an edge is residual.
+     * Returns the edge remaining capacity.
      *
-     * @return true if the edge is residual; false otherwise.
+     * @return remaining capacity.
      */
-    public boolean isResidual () {
-        return capacity == 0;
+    public int getRemainingCapacity() {
+        return capacity - flow;
+    }
+
+    /**
+     * Increments the edge flow value by the given bottleneck.
+     *
+     * @param bottleneck value to increment
+     */
+    public void incFlow(int bottleneck) {
+        flow += bottleneck;
+        if (inverse != null) // edges to the super sink do not have inverse
+            inverse.decFlow(bottleneck);
+    }
+
+    /**
+     * Decrements the edge flow value by the given bottleneck.
+     *
+     * @param bottleneck value to decrement
+     */
+    public void decFlow(int bottleneck) {
+        flow -= bottleneck;
+    }
+
+    /**
+     * Checks whether the edge was already visited.
+     *
+     * @return true when the edge was visited; false otherwise.
+     */
+    public boolean isVisited() {
+        return visited;
+    }
+
+    /**
+     * Returns the edge inverse edge.
+     *
+     * @return inverse edge.
+     */
+    public Edge getInverseEdge() {
+        return inverse;
+    }
+
+    /**
+     * Returns the edge's capacity.
+     *
+     * @return capacity
+     */
+    public int getCapacity() {
+        return capacity;
+    }
+
+    @Override
+    public String toString() {
+        String s = src + " -> " + dst + ", remaining: " + getRemainingCapacity() + ", label: " + label + ", inverse: ";
+
+        if (inverse != null)
+            return s + inverse.getSrc() + " -> " + inverse.getDst() + ", inv cap: " + inverse.getCapacity();
+        else
+            return s + "null";
     }
 }
