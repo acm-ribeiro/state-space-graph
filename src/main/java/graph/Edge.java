@@ -92,6 +92,13 @@ public class Edge {
     }
 
     /**
+     * Visits an edge.
+     */
+    public void visit() {
+        visited = true;
+    }
+
+    /**
      * Returns the edge inverse edge.
      *
      * @return inverse edge.
@@ -109,13 +116,33 @@ public class Edge {
         return capacity;
     }
 
+    public void setCapacity(int v) {
+        capacity = v;
+    }
+
+    /**
+     * Checks whether the edge is equal to the given edge.
+     * Two edges are equal if they share the same source and destination.
+     *
+     * @param object edge to compare.
+     * @return true if they're equal; false otherwise
+     */
+    @Override
+    public boolean equals(Object object) {
+        return object instanceof Edge other && src == other.getSrc() && dst == other.getDst();
+    }
+
     @Override
     public String toString() {
-        String s = src + " -> " + dst + ", remaining: " + getRemainingCapacity() + ", label: " + label + ", inverse: ";
+//        String s = src + " -> " + dst + ", remaining: " + getRemainingCapacity() + ", label: " + label + ", inverse: ";
+//
+//        if (inverse != null)
+//            return s + inverse.getSrc() + " -> " + inverse.getDst() + ", inv cap: " + inverse.getCapacity();
+//        else
+//            return s + "null";
 
-        if (inverse != null)
-            return s + inverse.getSrc() + " -> " + inverse.getDst() + ", inv cap: " + inverse.getCapacity();
-        else
-            return s + "null";
+        String s = src + " -> " + dst + ", visited: " + visited + ", label: " + label;
+
+        return s;
     }
 }
