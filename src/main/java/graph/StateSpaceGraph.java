@@ -117,7 +117,7 @@ public class StateSpaceGraph {
      * @param paths incomplete paths.
      * @return complete paths.
      */
-    public List<LinkedList<Integer>> completePaths (List<LinkedList<Integer>> paths) {
+    public List<LinkedList<Integer>> completePaths(List<LinkedList<Integer>> paths) {
         LinkedList<Integer>[] partial = new LinkedList[graph.length];
         for (int i = 0; i < partial.length; i++)
             partial[i] = new LinkedList<>();
@@ -154,14 +154,14 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Finds the path to extend. The path to extend is the path in which the last value is the same as the
-     * provided value.
+     * Finds the path to extend, i.e., the path in which the last element is the same as the
+     * given value.
      *
-     * @param paths  path list
-     * @param value  tail value
-     * @return  path
+     * @param paths path list
+     * @param value tail value
+     * @return path
      */
-    private LinkedList<Integer> findPath (List<LinkedList<Integer>> paths, int value) {
+    private LinkedList<Integer> findPath(List<LinkedList<Integer>> paths, int value) {
         LinkedList<Integer> found = null;
         int i = 0;
 
@@ -173,7 +173,6 @@ public class StateSpaceGraph {
 
         return found;
     }
-
 
 
     // Graph construction
@@ -314,7 +313,6 @@ public class StateSpaceGraph {
     }
 
 
-
     // Dinic's Algorithm
 
     /**
@@ -417,7 +415,6 @@ public class StateSpaceGraph {
     }
 
 
-
     // Debugging
 
     /**
@@ -431,7 +428,7 @@ public class StateSpaceGraph {
         for (int i = 0; i < prev.length; i++) {
             s.append("[").append(i).append("]: ");
 
-            if(!prev[i].isEmpty())
+            if (!prev[i].isEmpty())
                 for (Integer j : prev[i])
                     s.append(j).append(" -> ");
 
