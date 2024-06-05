@@ -16,7 +16,7 @@ public class Main {
         System.out.println(ssg.detailedEdges());
         System.out.println("---------------------------------------");
 
-        List<LinkedList<Integer>> paths = ssg.completePaths(ssg.mmBFS());
+        List<LinkedList<Integer>> paths = ssg.completePaths(ssg.twistedBFS());
         for (LinkedList<Integer> p : paths) {
             for (Integer i : p)
                 System.out.print(i + " ");

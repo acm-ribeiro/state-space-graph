@@ -49,7 +49,13 @@ public class StateSpaceGraph {
     }
 
 
-    public List<LinkedList<Integer>> mmBFS() {
+    /**
+     * A breadth-first search with a twist: a node is only expanded once.
+     * TODO we need a better name for this.
+     *
+     * @return possibly incomplete graph paths.
+     */
+    public List<LinkedList<Integer>> twistedBFS() {
         // Tracks whether nodes have been expanded
         boolean[] expanded = new boolean[graph.length];
 
@@ -79,7 +85,7 @@ public class StateSpaceGraph {
                         q.offer(next);
                         prev[next].add(node);
 
-                        path = findPath(paths, node);  // TODO there has to be a better way of doing this...
+                        path = findPath(paths, node);  // TODO there may be a better way of doing this...
 
                         if (path != null) {
                             // Cloning for path extension
@@ -103,27 +109,6 @@ public class StateSpaceGraph {
         }
 
         return paths;
-    }
-
-    /**
-     * Finds the path to extend. The path to extend is the path in which the last value is the same as the
-     * provided value.
-     *
-     * @param paths  path list
-     * @param value  tail value
-     * @return  path
-     */
-    private LinkedList<Integer> findPath (List<LinkedList<Integer>> paths, int value) {
-        LinkedList<Integer> found = null;
-        int i = 0;
-
-        while (found == null && i < paths.size()) {
-            if (paths.get(i).getLast() == value)
-                found = paths.get(i);
-            i++;
-        }
-
-        return found;
     }
 
     /**
@@ -169,6 +154,31 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Finds the path to extend. The path to extend is the path in which the last value is the same as the
+     * provided value.
+     *
+     * @param paths  path list
+     * @param value  tail value
+     * @return  path
+     */
+    private LinkedList<Integer> findPath (List<LinkedList<Integer>> paths, int value) {
+        LinkedList<Integer> found = null;
+        int i = 0;
+
+        while (found == null && i < paths.size()) {
+            if (paths.get(i).getLast() == value)
+                found = paths.get(i);
+            i++;
+        }
+
+        return found;
+    }
+
+
+
+    // Graph construction
+
+    /**
      * Initialises the graph, state, nodeLevels and next arrays.
      */
     private void initialiseStructures() {
@@ -183,105 +193,6 @@ public class StateSpaceGraph {
         prev = new LinkedList[graph.length];
         for (int i = 0; i < prev.length; i++)
             prev[i] = new LinkedList<>();
-    }
-
-    /**
-     * Dinic's algorithm implementation.
-     *
-     * @return maximum flow value.
-     */
-    public int dinic() {
-        int maxFlow = 0;
-
-        while (dinicBfs()) {
-            /*
-             * Shimon Even and Alon Itai's optimisation for pruning dead ends.
-             * This array tracks which edge we should take next for each node, i.e., next[n] indicates the
-             * next edge index to take in the adjacency list for node n.
-             */
-            Arrays.fill(next, 0);
-            int f = dfs(0, Integer.MAX_VALUE);
-            while (f != 0) {
-                maxFlow += f;
-                f = dfs(0, Integer.MAX_VALUE);
-            }
-        }
-
-        return maxFlow;
-    }
-
-    /**
-     * Constructs a level graph for Dinic's algorithm, by performing a BFS on the original graph.
-     * The levels of the graph are those obtained by doing a BFS on the source node, to label all the levels
-     * of the current flow graph. The level graph consists of all edges which go from L to L+1 in level and have
-     * remaining capacity (flow) > 0.
-     *
-     * @return true if we were able to reach the sink; false otherwise.
-     */
-    private boolean dinicBfs() {
-        // Initialises the node levels at -1
-        Arrays.fill(nodeLevels, -1);
-
-        // Stores the nodes to visit next
-        Deque<Integer> q = new ArrayDeque<>(graph.length);
-
-        // Add source node
-        q.add(0);
-        nodeLevels[0] = 0;
-
-        while (!q.isEmpty()) {
-            int n = q.poll(); // dequeue
-            List<Edge> outgoing = graph[n];
-
-            for (Edge e : outgoing) {
-                int cap = e.getRemainingCapacity();
-                int dst = e.getDst();
-
-                if (cap > 0 && nodeLevels[dst] == -1) {
-                    nodeLevels[dst] = nodeLevels[n] + 1;
-                    q.offer(dst); // enqueue
-                }
-            }
-        }
-
-        // Return whether we were able to reach the super sink
-        return nodeLevels[graph.length - 1] != -1;
-    }
-
-    /**
-     * Recursive depth-first search.
-     *
-     * @param current the current node
-     * @param flow    the minimum flow value along the path so far (starts at positive infinity)
-     * @return maximum flow along the path.
-     */
-    private int dfs(int current, int flow) {
-        // if we reached the sink, the algorithm should terminate
-        if (current == graph.length - 1)
-            return flow;
-
-        // number of outgoing edges of the current node
-        int numEdges = graph[current].size();
-        int edgeIdx = next[current];
-
-        while (edgeIdx < numEdges) {
-            Edge edge = graph[current].get(edgeIdx);
-            int capacity = edge.getRemainingCapacity();
-
-            if (capacity > 0 && nodeLevels[edge.getDst()] == nodeLevels[current] + 1) {
-                int bottleneck = dfs(edge.getDst(), Math.min(flow, capacity));
-
-                if (bottleneck > 0) {
-                    edge.incFlow(bottleneck);
-                    return bottleneck;
-                }
-            }
-
-            edgeIdx++;
-            next[current] = edgeIdx;
-        }
-
-        return 0;
     }
 
     /**
@@ -402,6 +313,113 @@ public class StateSpaceGraph {
         return line.contains(EDGE_CHAR);
     }
 
+
+
+    // Dinic's Algorithm
+
+    /**
+     * Dinic's algorithm implementation.
+     *
+     * @return maximum flow value.
+     */
+    private int dinic() {
+        int maxFlow = 0;
+
+        while (dinicBfs()) {
+            /*
+             * Shimon Even and Alon Itai's optimisation for pruning dead ends.
+             * This array tracks which edge we should take next for each node, i.e., next[n] indicates the
+             * next edge index to take in the adjacency list for node n.
+             */
+            Arrays.fill(next, 0);
+            int f = dfs(0, Integer.MAX_VALUE);
+            while (f != 0) {
+                maxFlow += f;
+                f = dfs(0, Integer.MAX_VALUE);
+            }
+        }
+
+        return maxFlow;
+    }
+
+    /**
+     * Constructs a level graph for Dinic's algorithm, by performing a BFS on the original graph.
+     * The levels of the graph are those obtained by doing a BFS on the source node, to label all the levels
+     * of the current flow graph. The level graph consists of all edges which go from L to L+1 in level and have
+     * remaining capacity (flow) > 0.
+     *
+     * @return true if we were able to reach the sink; false otherwise.
+     */
+    private boolean dinicBfs() {
+        // Initialises the node levels at -1
+        Arrays.fill(nodeLevels, -1);
+
+        // Stores the nodes to visit next
+        Deque<Integer> q = new ArrayDeque<>(graph.length);
+
+        // Add source node
+        q.add(0);
+        nodeLevels[0] = 0;
+
+        while (!q.isEmpty()) {
+            int n = q.poll(); // dequeue
+            List<Edge> outgoing = graph[n];
+
+            for (Edge e : outgoing) {
+                int cap = e.getRemainingCapacity();
+                int dst = e.getDst();
+
+                if (cap > 0 && nodeLevels[dst] == -1) {
+                    nodeLevels[dst] = nodeLevels[n] + 1;
+                    q.offer(dst); // enqueue
+                }
+            }
+        }
+
+        // Return whether we were able to reach the super sink
+        return nodeLevels[graph.length - 1] != -1;
+    }
+
+    /**
+     * Recursive depth-first search.
+     *
+     * @param current the current node
+     * @param flow    the minimum flow value along the path so far (starts at positive infinity)
+     * @return maximum flow along the path.
+     */
+    private int dfs(int current, int flow) {
+        // if we reached the sink, the algorithm should terminate
+        if (current == graph.length - 1)
+            return flow;
+
+        // number of outgoing edges of the current node
+        int numEdges = graph[current].size();
+        int edgeIdx = next[current];
+
+        while (edgeIdx < numEdges) {
+            Edge edge = graph[current].get(edgeIdx);
+            int capacity = edge.getRemainingCapacity();
+
+            if (capacity > 0 && nodeLevels[edge.getDst()] == nodeLevels[current] + 1) {
+                int bottleneck = dfs(edge.getDst(), Math.min(flow, capacity));
+
+                if (bottleneck > 0) {
+                    edge.incFlow(bottleneck);
+                    return bottleneck;
+                }
+            }
+
+            edgeIdx++;
+            next[current] = edgeIdx;
+        }
+
+        return 0;
+    }
+
+
+
+    // Debugging
+
     /**
      * Returns a string representation of the prev data structure.
      *
@@ -422,7 +440,6 @@ public class StateSpaceGraph {
 
         return s.toString();
     }
-
 
     /**
      * Returns a string representation of the graph with detailed information on the edges.
