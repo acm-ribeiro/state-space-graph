@@ -174,7 +174,7 @@ public class StateSpaceGraph {
         return found;
     }
 
-    
+
 
     // Graph construction
 
