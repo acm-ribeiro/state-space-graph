@@ -8,6 +8,27 @@
     <artifactId>state-space-graph</artifactId>
     <version>1.0</version>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>run.Main</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <finalName>state-space-graph</finalName> <!-- generated jar file name -->
+                    <appendAssemblyId>false</appendAssemblyId> <!-- Removes the jar-with-dependencies suffix -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
     <!-- Add dependencies from github repositories -->
     <repositories>
         <repository>
@@ -28,27 +49,6 @@
             <artifactId>tla-state-parser</artifactId>
             <version>f654c5e655</version>
             <scope>import</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher -->
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
-            <version>1.9.2</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

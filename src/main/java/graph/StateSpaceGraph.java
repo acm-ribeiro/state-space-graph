@@ -174,6 +174,7 @@ public class StateSpaceGraph {
         return found;
     }
 
+    
 
     // Graph construction
 
@@ -192,34 +193,6 @@ public class StateSpaceGraph {
         prev = new LinkedList[graph.length];
         for (int i = 0; i < prev.length; i++)
             prev[i] = new LinkedList<>();
-    }
-
-    /**
-     * Adds an inverse edge for all edges that do not have one.
-     */
-    private void addInverseEdges() {
-        for (int src = 0; src < graph.length - 1; src++) {
-            for (Edge e : graph[src]) {
-                if (!e.getLabel().equals(SINK)) {
-                    int dst = e.getDst();
-                    int i = 0;
-                    Edge e1, inverse = null;
-
-                    while (inverse == null && i < graph[dst].size()) {
-                        e1 = graph[dst].get(i);
-                        if (e1.getDst() == src)
-                            inverse = e1;
-                        i++;
-                    }
-
-                    if (inverse == null) // not found
-                        inverse = new Edge(dst, src, INVERSE, 0);
-
-                    inverse.setInverse(e);
-                    e.setInverse(inverse);
-                }
-            }
-        }
     }
 
     /**
@@ -412,6 +385,34 @@ public class StateSpaceGraph {
         }
 
         return 0;
+    }
+
+    /**
+     * Adds an inverse edge for all edges that do not have one.
+     */
+    private void addInverseEdges() {
+        for (int src = 0; src < graph.length - 1; src++) {
+            for (Edge e : graph[src]) {
+                if (!e.getLabel().equals(SINK)) {
+                    int dst = e.getDst();
+                    int i = 0;
+                    Edge e1, inverse = null;
+
+                    while (inverse == null && i < graph[dst].size()) {
+                        e1 = graph[dst].get(i);
+                        if (e1.getDst() == src)
+                            inverse = e1;
+                        i++;
+                    }
+
+                    if (inverse == null) // not found
+                        inverse = new Edge(dst, src, INVERSE, 0);
+
+                    inverse.setInverse(e);
+                    e.setInverse(inverse);
+                }
+            }
+        }
     }
 
 
