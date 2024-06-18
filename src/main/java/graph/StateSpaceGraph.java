@@ -50,6 +50,16 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Returns the state of a given node.
+     *
+     * @param idx node index.
+     * @return state.
+     */
+    public State getState(int idx) {
+        return states[idx];
+    }
+
+    /**
      * Returns the paths on the SSG.
      *
      * @return nominal paths.
