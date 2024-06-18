@@ -54,20 +54,16 @@ public class StateSpaceGraph {
      *
      * @return nominal paths.
      */
-    public List<List<String>> getPaths() {
+    public List<List<Edge>> getPaths() {
         List<LinkedList<Integer>> paths = completePaths();
-        List<List<String>> nominal = new ArrayList<>(paths.size());
+        List<List<Edge>> nominal = new ArrayList<>(paths.size());
 
-        ArrayList<String> n;
-        int src, dst;
+        ArrayList<Edge> n;
         for (LinkedList<Integer> p : paths) {
             n = new ArrayList<>(p.size() - 1); // 4 nodes = 3 transitions
 
-            for (int i = 0; i < p.size() - 2; i++) { // -2 to remove the sink
-                src = p.get(i);
-                dst = p.get(i + 1);
-                n.add(findEdge(graph[src], dst).getLabel());
-            }
+            for (int i = 0; i < p.size() - 2; i++)  // -2 to remove the sink
+                n.add(findEdge(graph[p.get(i)], p.get(i + 1)));
 
             nominal.add(n);
         }
