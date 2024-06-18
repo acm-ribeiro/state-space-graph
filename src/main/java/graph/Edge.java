@@ -134,15 +134,6 @@ public class Edge {
 
     @Override
     public String toString() {
-//        String s = src + " -> " + dst + ", remaining: " + getRemainingCapacity() + ", label: " + label + ", inverse: ";
-//
-//        if (inverse != null)
-//            return s + inverse.getSrc() + " -> " + inverse.getDst() + ", inv cap: " + inverse.getCapacity();
-//        else
-//            return s + "null";
-
-        String s = src + " -> " + dst + ", visited: " + visited + ", label: " + label;
-
-        return s;
+        return src + " -> " + dst + ", visited: " + visited + ", label: " + label;
     }
 }

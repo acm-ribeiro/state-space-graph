@@ -30,8 +30,9 @@ public class StateSpaceGraph {
 
     private List<Edge>[] graph;
     private State[] states;
-    private int[] nodeLevels, next;
     private Map<Long, Integer> nodesById;
+
+    private int[] nodeLevels, next;        // for Dinic's algorithm
     private LinkedList<Integer>[] prev;    // stores the parents of a node in the BFS tree
 
     public StateSpaceGraph(String filePath) {
@@ -48,6 +49,31 @@ public class StateSpaceGraph {
         }
     }
 
+    /**
+     * Returns the paths on the SSG.
+     *
+     * @return nominal paths.
+     */
+    public List<List<String>> getPaths() {
+        List<LinkedList<Integer>> paths = completePaths();
+        List<List<String>> nominal = new ArrayList<>(paths.size());
+
+        ArrayList<String> n;
+        int src, dst;
+        for (LinkedList<Integer> p : paths) {
+            n = new ArrayList<>(p.size() - 1); // 4 nodes = 3 transitions
+
+            for (int i = 0; i < p.size() - 2; i++) { // -2 to remove the sink
+                src = p.get(i);
+                dst = p.get(i + 1);
+                n.add(findEdge(graph[src], dst).getLabel());
+            }
+
+            nominal.add(n);
+        }
+
+        return nominal;
+    }
 
     /**
      * A breadth-first search with a twist: a node is only expanded once.
@@ -55,7 +81,7 @@ public class StateSpaceGraph {
      *
      * @return possibly incomplete graph paths.
      */
-    public List<LinkedList<Integer>> twistedBFS() {
+    private List<LinkedList<Integer>> twistedBFS() {
         // Tracks whether nodes have been expanded
         boolean[] expanded = new boolean[graph.length];
 
@@ -85,7 +111,7 @@ public class StateSpaceGraph {
                         q.offer(next);
                         prev[next].add(node);
 
-                        path = findPath(paths, node);  // TODO there may be a better way of doing this...
+                        path = findPath(paths, node);  // TODO there may be a better way of doing this.
 
                         if (path != null) {
                             // Cloning for path extension
@@ -112,45 +138,122 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Completes the paths resulting from the BFS*.
+     * Completes the paths resulting from the twisted BFS.
      *
-     * @param paths incomplete paths.
      * @return complete paths.
      */
-    public List<LinkedList<Integer>> completePaths(List<LinkedList<Integer>> paths) {
-        LinkedList<Integer>[] partial = new LinkedList[graph.length];
-        for (int i = 0; i < partial.length; i++)
-            partial[i] = new LinkedList<>();
+    private List<LinkedList<Integer>> completePaths() {
+        List<LinkedList<Integer>> incomplete = twistedBFS();
 
-        // Stores the nodes to visit next
+        /* Stores the partial paths from the node index to the final state
+         * e.g., in the smallest graph:
+         * partial[0] = [ [0, 1, 3, 9], [0, 2, 6, 9] ]
+         * partial[1] = [ [1, 3, 9], [1, 5, 8, 3, 9] ]
+         */
+        List<LinkedList<Integer>>[] partial = initialisePartialPaths();
+
+        // Stores the nodes to extend next. The first node to extend is the final state.
         Deque<Integer> q = new ArrayDeque<>(graph.length);
-        q.offer(graph.length - 1); // start at the final state
+        q.offer(graph.length - 1);
 
         // Tracks whether nodes have been expanded
         boolean[] expanded = new boolean[graph.length];
 
+        /* Tracks the current path we're extending in the partial paths list.
+         * e.g., if currentPathIdx[0] = 1 we know partial[0].size() = 2 and partial[0].get(0)
+         * has a partial path from the initial state (0) to the final state (graph.length - 1).
+         */
+        int[] currentPathIdx = new int[graph.length];
+
+        // Node being currently expanded
         int node;
-        LinkedList<Integer> nodePrev;
+        LinkedList<Integer> nodePrev, path;
 
         while (!q.isEmpty()) {
             node = q.poll();
 
             if (!expanded[node]) {
                 nodePrev = prev[node];
-                for (Integer i : nodePrev) {
-                    partial[i].addFirst(node);
-                    q.offer(i);
-                }
-            }
 
-            expanded[node] = true;
+                for (Integer i : nodePrev) {
+                    path = partial[i].get(currentPathIdx[i]);
+                    path.addAll(partial[node].get(0)); // We could change this index for more variety.
+                    q.offer(i);
+
+                    // If the path is complete we should move on to another list
+                    if (isComplete(path)) {
+                        currentPathIdx[i]++;
+                        path = new LinkedList<>();
+                        path.add(i);
+                        partial[i].add(path);
+                    }
+                }
+
+                expanded[node] = true;
+            }
         }
 
-        // Completing the paths
-        for (LinkedList<Integer> path : paths)
-            path.addAll(partial[path.getLast()]);
+        // Removing the first element of every partial path
+        cleanPartial(partial);
 
-        return paths;
+        // Completing all paths; this array tracks which paths are complete
+        boolean[] complete = new boolean[incomplete.size()];
+        int i = 0, completePaths = 0;
+
+        while (completePaths < incomplete.size()) {
+            if (!complete[i]) {
+                path = incomplete.get(i);
+                path.addAll(partial[path.getLast()].get(0)); // As of now this works. The number of paths can "explode".
+                complete[i] = path.getLast() == graph.length - 1;
+
+                if (complete[i])
+                    completePaths++;
+            }
+
+            i = i == incomplete.size() - 1 ? 0 : i + 1;
+        }
+
+        return incomplete;
+    }
+
+    /**
+     * Checks whether a path is complete, i.e., reaches the final state.
+     *
+     * @param path path to check.
+     * @return true if the path is complete; false otherwise.
+     */
+    private boolean isComplete(LinkedList<Integer> path) {
+        return path.getLast().equals(graph.length - 1);
+    }
+
+    /**
+     * Removes the first element of every partial path.
+     *
+     * @param partial partial paths list.
+     */
+    private void cleanPartial(List<LinkedList<Integer>>[] partial) {
+        for (List<LinkedList<Integer>> pathList : partial)
+            for (LinkedList<Integer> path : pathList)
+                path.removeFirst();
+    }
+
+    /**
+     * Initialises the partial paths structure used to complete the paths resulting from the Twisted BFS.
+     *
+     * @return partial paths.
+     */
+    private List<LinkedList<Integer>>[] initialisePartialPaths() {
+        List<LinkedList<Integer>>[] partial = new LinkedList[graph.length];
+        LinkedList<Integer> first;
+
+        for (int i = 0; i < partial.length; i++) {
+            first = new LinkedList<>();
+            first.add(i);
+            partial[i] = new LinkedList<>();
+            partial[i].add(first);
+        }
+
+        return partial;
     }
 
     /**
@@ -174,6 +277,28 @@ public class StateSpaceGraph {
         return found;
     }
 
+    /**
+     * Finds an edge in a node's outgoing edge's list.
+     *
+     * @param out  outgoing edges of a node.
+     * @param dst  edge's destination node.
+     * @return edge or null if it does not exist.
+     */
+    private Edge findEdge(List<Edge> out, int dst) {
+        Edge e, edge = null;
+        int i = 0;
+
+        while (edge == null && i < out.size()) {
+            e = out.get(i);
+
+            if (e.getDst() == dst)
+                edge = e;
+
+            i++;
+        }
+
+        return edge;
+    }
 
 
     // Graph construction
@@ -424,7 +549,7 @@ public class StateSpaceGraph {
      * @return string of prev.
      */
     public String prevToString() {
-        StringBuilder s = new StringBuilder();
+        StringBuilder s = new StringBuilder("prev: \n");
 
         for (int i = 0; i < prev.length; i++) {
             s.append("[").append(i).append("]: ");
