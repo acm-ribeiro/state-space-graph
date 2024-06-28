@@ -60,6 +60,15 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Returns the graph's initial state.
+     *
+     * @return initial state.
+     */
+    public State getInitialState() {
+        return states[0];
+    }
+
+    /**
      * Returns the paths on the SSG.
      *
      * @return nominal paths.

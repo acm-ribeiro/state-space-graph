@@ -22,7 +22,7 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <finalName>state-space-graph</finalName> <!-- generated jar file name -->
-                    <appendAssemblyId>false</appendAssemblyId> <!-- Removes the jar-with-dependencies suffix -->
+                    <appendAssemblyId>false</appendAssemblyId> <!-- removes the jar-with-dependencies suffix -->
                 </configuration>
             </plugin>
         </plugins>
@@ -42,6 +42,7 @@
         </repository>
     </repositories>
 
+    <!-- https://github.com/acm-ribeiro/tla-state-parser -->
     <dependencies>
         <dependency>
             <groupId>com.github.acm-ribeiro</groupId>
