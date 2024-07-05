@@ -382,9 +382,6 @@ public class StateSpaceGraph {
                     graph[srcId].add(edge);
 
             } else if (isNodeDescription(line)) {
-                // TODO remove
-                System.out.println(line.split(QUOTE)[1] + "\n\n");
-
                 State state = parser.parse(line.split(QUOTE)[1]);
                 long id = Long.parseLong(line.split(SPACE)[0]);
                 int nodeId = nodesById.get(id);
