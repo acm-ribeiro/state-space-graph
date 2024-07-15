@@ -33,7 +33,7 @@ public class StateSpaceGraph {
     private Map<Long, Integer> nodesById;
 
     private int[] nodeLevels, next;        // for Dinic's algorithm
-    private LinkedList<Integer>[] prev;    // stores the parents of a node in the BFS tree
+    private List<Integer>[] prev;    // stores the parents of a node in the BFS tree
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
@@ -182,7 +182,8 @@ public class StateSpaceGraph {
 
         // Node being currently expanded
         int node;
-        LinkedList<Integer> nodePrev, path;
+        List<Integer> nodePrev;
+        LinkedList<Integer> path;
 
         while (!q.isEmpty()) {
             node = q.poll();
@@ -322,7 +323,7 @@ public class StateSpaceGraph {
      * Initialises the graph, state, nodeLevels and next arrays.
      */
     private void initialiseStructures() {
-        graph = new List[nodesById.size() + 1];
+        graph = new List[nodesById.size() + 1]; // warning
         for (int i = 0; i < graph.length; i++)
             graph[i] = new ArrayList<>(INITIAL_EDGES);
 
@@ -330,7 +331,7 @@ public class StateSpaceGraph {
         states = new State[graph.length];
         nodeLevels = new int[graph.length];
 
-        prev = new LinkedList[graph.length];
+        prev = new List[graph.length];
         for (int i = 0; i < prev.length; i++)
             prev[i] = new LinkedList<>();
     }
@@ -398,7 +399,7 @@ public class StateSpaceGraph {
      * Adds an edge from all the final states to the super sink node.
      */
     private void addSuperSink() {
-        graph[graph.length - 1] = new ArrayList<>(INITIAL_EDGES);
+        //graph[graph.length - 1] = new ArrayList<>(INITIAL_EDGES);
 
         for (int i = 0; i < graph.length - 1; i++)
             if (graph[i].isEmpty())
