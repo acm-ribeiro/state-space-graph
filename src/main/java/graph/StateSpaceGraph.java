@@ -319,16 +319,21 @@ public class StateSpaceGraph {
     }
 
 
+
     // Graph construction
 
     /**
-     * Initialises the graph, state, nodeLevels and next arrays.
+     * Initialises the outgoing, incoming, state, and prev.
      */
     @SuppressWarnings("unchecked")
     private void initialiseStructures() {
-        outgoing = new List[nodesById.size() + 1]; // warning
+        outgoing = new List[nodesById.size() + 1];
         for (int i = 0; i < outgoing.length; i++)
             outgoing[i] = new ArrayList<>(INITIAL_EDGES);
+
+        incoming = new List[nodesById.size() + 1];
+        for (int i = 0; i < incoming.length; i++)
+            incoming[i] = new ArrayList<>(INITIAL_EDGES);
 
         prev = new List[outgoing.length];
         for (int i = 0; i < prev.length; i++)
@@ -384,6 +389,9 @@ public class StateSpaceGraph {
                 if (!outgoing[srcId].contains(edge))
                     outgoing[srcId].add(edge);
 
+                if(!incoming[dstId].contains(edge))
+                    incoming[dstId].add(edge);
+
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
                 long id = Long.parseLong(line.split(SPACE)[0]);
@@ -402,8 +410,11 @@ public class StateSpaceGraph {
      */
     private void addFinalState() {
        for (int i = 0; i < outgoing.length - 1; i++)
-            if (outgoing[i].isEmpty())
-                outgoing[i].add(new Edge(i, finalState, FINAL, Integer.MAX_VALUE));
+           if (outgoing[i].isEmpty()) {
+               Edge edge = new Edge(i, finalState, FINAL, Integer.MAX_VALUE);
+               outgoing[i].add(edge);
+               incoming[finalState].add(edge);
+           }
     }
 
     /**
@@ -455,7 +466,7 @@ public class StateSpaceGraph {
      *
      * @return string representation of the graph
      */
-    public String detailedEdges() {
+    public String detailedEdgestoString() {
         StringBuilder s = new StringBuilder();
 
         for (int i = 0; i < outgoing.length; i++) {
@@ -472,6 +483,35 @@ public class StateSpaceGraph {
         return s.toString();
     }
 
+    /**
+     * Incoming to string
+     * @return string representation of the incoming variable.
+     */
+    public String incomingToString() {
+        StringBuilder s = new StringBuilder();
+
+        for (int i = 0; i < incoming.length; i++) {
+            s.append(i);
+            s.append(": {");
+
+            for (Edge e : incoming[i]) {
+                s.append(e.getSrc());
+                s.append("; ");
+            }
+
+            if (!incoming[i].isEmpty())
+                s.delete(s.length() - 2, s.length());
+
+            s.append("}\n");
+        }
+
+        return s.toString();
+    }
+
+    /**
+     * Outgoing to string
+     * @return string representation of the outgoing variable.
+     */
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
