@@ -21,29 +21,29 @@ public class StateSpaceGraph {
     private static final String NOT_FOUND = "File %s not found.\n";
 
     // Edge labels
-    private static final String SINK = "sink";
-    private static final String INVERSE = "inv";
+    private static final String FINAL = "final";
 
     // Initial sizes
     private static int INITIAL_NODES = 1000;
     private static int INITIAL_EDGES = 30;
 
-    private List<Edge>[] graph;
-    private State[] states;
-    private Map<Long, Integer> nodesById;
+    // Initial state index
+    private static int INITIAL = 0;
 
-    private int[] nodeLevels, next;        // for Dinic's algorithm
-    private List<Integer>[] prev;    // stores the parents of a node in the BFS tree
+    private List<Edge>[] outgoing;          // stores the outgoing edges of all the graph's nodes
+    private List<Edge>[] incoming;          // stores the incoming edges of all the graph's nodes
+    private State[] states;                 // stores the graph states
+    private Map<Long, Integer> nodesById;   // stores the graph's nodes by id
+    private int finalState;                 // stores the graph's final state index
+    private List<Integer>[] prev;           // stores the parents of a node in the BFS tree
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
         try {
-            countNodes(filePath);   // counts the number of nodes in the graph; initialises graph, states and nodeLevels
+            countNodes(filePath);
             initialiseStructures();
-            processEdges(filePath); // adds the graph's edges and states - this is needed because there are edges
-            // referencing nodes defined in posterior lines of the DOT file
-            addSuperSink();
-            addInverseEdges();
+            processEdges(filePath);
+            addFinalState();
         } catch (IOException e) {
             System.err.printf(NOT_FOUND, filePath);
         }
@@ -65,7 +65,7 @@ public class StateSpaceGraph {
      * @return initial state.
      */
     public State getInitialState() {
-        return states[0];
+        return states[INITIAL];
     }
 
     /**
@@ -74,15 +74,15 @@ public class StateSpaceGraph {
      * @return nominal paths.
      */
     public List<List<Edge>> getPaths() {
-        List<LinkedList<Integer>> paths = completePaths();
+        List<List<Integer>> paths = completePaths();
         List<List<Edge>> nominal = new ArrayList<>(paths.size());
 
         ArrayList<Edge> n;
-        for (LinkedList<Integer> p : paths) {
+        for (List<Integer> p : paths) {
             n = new ArrayList<>(p.size() - 1); // 4 nodes = 3 transitions
 
             for (int i = 0; i < p.size() - 2; i++)  // -2 to remove the sink
-                n.add(findEdge(graph[p.get(i)], p.get(i + 1)));
+                n.add(findEdge(outgoing[p.get(i)], p.get(i + 1)));
 
             nominal.add(n);
         }
@@ -96,20 +96,20 @@ public class StateSpaceGraph {
      *
      * @return possibly incomplete graph paths.
      */
-    private List<LinkedList<Integer>> twistedBFS() {
+    private List<List<Integer>> twistedBFS() {
         // Tracks whether nodes have been expanded
-        boolean[] expanded = new boolean[graph.length];
+        boolean[] expanded = new boolean[outgoing.length];
 
         // Stores the nodes to visit next
-        Deque<Integer> q = new ArrayDeque<>(graph.length);
-        q.offer(0);
+        Deque<Integer> q = new ArrayDeque<>(outgoing.length);
+        q.offer(INITIAL);
 
         // Stores the paths found so far (including incomplete paths)
-        List<LinkedList<Integer>> paths = new LinkedList<>();
+        List<List<Integer>> paths = new LinkedList<>();
 
         // Path with the initial node
-        LinkedList<Integer> path = new LinkedList<>();
-        path.add(0);
+        List<Integer> path = new LinkedList<>();
+        path.add(INITIAL);
         paths.add(path);
 
         int node, next;
@@ -117,7 +117,7 @@ public class StateSpaceGraph {
         while (!q.isEmpty()) {
             node = q.poll();
             if (!expanded[node]) {
-                List<Edge> out = graph[node];
+                List<Edge> out = outgoing[node];
 
                 for (Edge e : out) {
                     if (!e.isVisited()) {
@@ -130,7 +130,7 @@ public class StateSpaceGraph {
 
                         if (path != null) {
                             // Cloning for path extension
-                            LinkedList<Integer> cpy = new LinkedList<>(path);
+                            List<Integer> cpy = new LinkedList<>(path);
                             cpy.add(next);
                             paths.add(cpy);
                         } else {
@@ -157,33 +157,32 @@ public class StateSpaceGraph {
      *
      * @return complete paths.
      */
-    private List<LinkedList<Integer>> completePaths() {
-        List<LinkedList<Integer>> incomplete = twistedBFS();
+    private List<List<Integer>> completePaths() {
+        List<List<Integer>> incomplete = twistedBFS();
 
         /* Stores the partial paths from the node index to the final state
          * e.g., in the smallest graph:
          * partial[0] = [ [0, 1, 3, 9], [0, 2, 6, 9] ]
          * partial[1] = [ [1, 3, 9], [1, 5, 8, 3, 9] ]
          */
-        List<LinkedList<Integer>>[] partial = initialisePartialPaths();
+        List<List<Integer>>[] partial = initialisePartialPaths();
 
         // Stores the nodes to extend next. The first node to extend is the final state.
-        Deque<Integer> q = new ArrayDeque<>(graph.length);
-        q.offer(graph.length - 1);
+        Deque<Integer> q = new ArrayDeque<>(outgoing.length);
+        q.offer(outgoing.length - 1);
 
         // Tracks whether nodes have been expanded
-        boolean[] expanded = new boolean[graph.length];
+        boolean[] expanded = new boolean[outgoing.length];
 
         /* Tracks the current path we're extending in the partial paths list.
          * e.g., if currentPathIdx[0] = 1 we know partial[0].size() = 2 and partial[0].get(0)
          * has a partial path from the initial state (0) to the final state (graph.length - 1).
          */
-        int[] currentPathIdx = new int[graph.length];
+        int[] currentPathIdx = new int[outgoing.length];
 
         // Node being currently expanded
         int node;
-        List<Integer> nodePrev;
-        LinkedList<Integer> path;
+        List<Integer> nodePrev, path;
 
         while (!q.isEmpty()) {
             node = q.poll();
@@ -214,13 +213,14 @@ public class StateSpaceGraph {
 
         // Completing all paths; this array tracks which paths are complete
         boolean[] complete = new boolean[incomplete.size()];
-        int i = 0, completePaths = 0;
+        int i = 0, completePaths = 0, last;
 
         while (completePaths < incomplete.size()) {
             if (!complete[i]) {
                 path = incomplete.get(i);
-                path.addAll(partial[path.getLast()].get(0)); // As of now this works. The number of paths can "explode".
-                complete[i] = path.getLast() == graph.length - 1;
+                last = path.get(path.size() - 1);
+                path.addAll(partial[last].get(0)); // As of now this works. The number of paths can "explode".
+                complete[i] = last == finalState;
 
                 if (complete[i])
                     completePaths++;
@@ -238,8 +238,8 @@ public class StateSpaceGraph {
      * @param path path to check.
      * @return true if the path is complete; false otherwise.
      */
-    private boolean isComplete(LinkedList<Integer> path) {
-        return path.getLast().equals(graph.length - 1);
+    private boolean isComplete(List<Integer> path) {
+        return path.get(path.size() - 1).equals(finalState);
     }
 
     /**
@@ -247,10 +247,10 @@ public class StateSpaceGraph {
      *
      * @param partial partial paths list.
      */
-    private void cleanPartial(List<LinkedList<Integer>>[] partial) {
-        for (List<LinkedList<Integer>> pathList : partial)
-            for (LinkedList<Integer> path : pathList)
-                path.removeFirst();
+    private void cleanPartial(List<List<Integer>>[] partial) {
+        for (List<List<Integer>> pathList : partial)
+            for (List<Integer> path : pathList)
+                path.remove(0);
     }
 
     /**
@@ -258,9 +258,10 @@ public class StateSpaceGraph {
      *
      * @return partial paths.
      */
-    private List<LinkedList<Integer>>[] initialisePartialPaths() {
-        List<LinkedList<Integer>>[] partial = new LinkedList[graph.length];
-        LinkedList<Integer> first;
+    @SuppressWarnings("unchecked")
+    private List<List<Integer>>[] initialisePartialPaths() {
+        List<List<Integer>>[] partial = new LinkedList[outgoing.length];
+        List<Integer> first;
 
         for (int i = 0; i < partial.length; i++) {
             first = new LinkedList<>();
@@ -280,12 +281,13 @@ public class StateSpaceGraph {
      * @param value tail value
      * @return path
      */
-    private LinkedList<Integer> findPath(List<LinkedList<Integer>> paths, int value) {
-        LinkedList<Integer> found = null;
+    private List<Integer> findPath(List<List<Integer>> paths, int value) {
+        List<Integer> path, found = null;
         int i = 0;
 
         while (found == null && i < paths.size()) {
-            if (paths.get(i).getLast() == value)
+            path = paths.get(i);
+            if (path.get(path.size() - 1) == value)
                 found = paths.get(i);
             i++;
         }
@@ -322,18 +324,18 @@ public class StateSpaceGraph {
     /**
      * Initialises the graph, state, nodeLevels and next arrays.
      */
+    @SuppressWarnings("unchecked")
     private void initialiseStructures() {
-        graph = new List[nodesById.size() + 1]; // warning
-        for (int i = 0; i < graph.length; i++)
-            graph[i] = new ArrayList<>(INITIAL_EDGES);
+        outgoing = new List[nodesById.size() + 1]; // warning
+        for (int i = 0; i < outgoing.length; i++)
+            outgoing[i] = new ArrayList<>(INITIAL_EDGES);
 
-        next = new int[graph.length];
-        states = new State[graph.length];
-        nodeLevels = new int[graph.length];
-
-        prev = new List[graph.length];
+        prev = new List[outgoing.length];
         for (int i = 0; i < prev.length; i++)
             prev[i] = new LinkedList<>();
+
+        states = new State[outgoing.length];
+        finalState = outgoing.length - 1;
     }
 
     /**
@@ -379,8 +381,8 @@ public class StateSpaceGraph {
                 int dstId = nodesById.get(dst);
                 edge = new Edge(srcId, dstId, label, 1);
 
-                if (!graph[srcId].contains(edge))
-                    graph[srcId].add(edge);
+                if (!outgoing[srcId].contains(edge))
+                    outgoing[srcId].add(edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
@@ -398,12 +400,10 @@ public class StateSpaceGraph {
     /**
      * Adds an edge from all the final states to the super sink node.
      */
-    private void addSuperSink() {
-        //graph[graph.length - 1] = new ArrayList<>(INITIAL_EDGES);
-
-        for (int i = 0; i < graph.length - 1; i++)
-            if (graph[i].isEmpty())
-                graph[i].add(new Edge(i, graph.length - 1, SINK, Integer.MAX_VALUE));
+    private void addFinalState() {
+       for (int i = 0; i < outgoing.length - 1; i++)
+            if (outgoing[i].isEmpty())
+                outgoing[i].add(new Edge(i, finalState, FINAL, Integer.MAX_VALUE));
     }
 
     /**
@@ -424,136 +424,6 @@ public class StateSpaceGraph {
      */
     private boolean isEdgeDescription(String line) {
         return line.contains(EDGE_CHAR);
-    }
-
-
-    // Dinic's Algorithm
-
-    /**
-     * Dinic's algorithm implementation.
-     *
-     * @return maximum flow value.
-     */
-    private int dinic() {
-        int maxFlow = 0;
-
-        while (dinicBfs()) {
-            /*
-             * Shimon Even and Alon Itai's optimisation for pruning dead ends.
-             * This array tracks which edge we should take next for each node, i.e., next[n] indicates the
-             * next edge index to take in the adjacency list for node n.
-             */
-            Arrays.fill(next, 0);
-            int f = dfs(0, Integer.MAX_VALUE);
-            while (f != 0) {
-                maxFlow += f;
-                f = dfs(0, Integer.MAX_VALUE);
-            }
-        }
-
-        return maxFlow;
-    }
-
-    /**
-     * Constructs a level graph for Dinic's algorithm, by performing a BFS on the original graph.
-     * The levels of the graph are those obtained by doing a BFS on the source node, to label all the levels
-     * of the current flow graph. The level graph consists of all edges which go from L to L+1 in level and have
-     * remaining capacity (flow) > 0.
-     *
-     * @return true if we were able to reach the sink; false otherwise.
-     */
-    private boolean dinicBfs() {
-        // Initialises the node levels at -1
-        Arrays.fill(nodeLevels, -1);
-
-        // Stores the nodes to visit next
-        Deque<Integer> q = new ArrayDeque<>(graph.length);
-
-        // Add source node
-        q.add(0);
-        nodeLevels[0] = 0;
-
-        while (!q.isEmpty()) {
-            int n = q.poll(); // dequeue
-            List<Edge> outgoing = graph[n];
-
-            for (Edge e : outgoing) {
-                int cap = e.getRemainingCapacity();
-                int dst = e.getDst();
-
-                if (cap > 0 && nodeLevels[dst] == -1) {
-                    nodeLevels[dst] = nodeLevels[n] + 1;
-                    q.offer(dst); // enqueue
-                }
-            }
-        }
-
-        // Return whether we were able to reach the super sink
-        return nodeLevels[graph.length - 1] != -1;
-    }
-
-    /**
-     * Recursive depth-first search.
-     *
-     * @param current the current node
-     * @param flow    the minimum flow value along the path so far (starts at positive infinity)
-     * @return maximum flow along the path.
-     */
-    private int dfs(int current, int flow) {
-        // if we reached the sink, the algorithm should terminate
-        if (current == graph.length - 1)
-            return flow;
-
-        // number of outgoing edges of the current node
-        int numEdges = graph[current].size();
-        int edgeIdx = next[current];
-
-        while (edgeIdx < numEdges) {
-            Edge edge = graph[current].get(edgeIdx);
-            int capacity = edge.getRemainingCapacity();
-
-            if (capacity > 0 && nodeLevels[edge.getDst()] == nodeLevels[current] + 1) {
-                int bottleneck = dfs(edge.getDst(), Math.min(flow, capacity));
-
-                if (bottleneck > 0) {
-                    edge.incFlow(bottleneck);
-                    return bottleneck;
-                }
-            }
-
-            edgeIdx++;
-            next[current] = edgeIdx;
-        }
-
-        return 0;
-    }
-
-    /**
-     * Adds an inverse edge for all edges that do not have one.
-     */
-    private void addInverseEdges() {
-        for (int src = 0; src < graph.length - 1; src++) {
-            for (Edge e : graph[src]) {
-                if (!e.getLabel().equals(SINK)) {
-                    int dst = e.getDst();
-                    int i = 0;
-                    Edge e1, inverse = null;
-
-                    while (inverse == null && i < graph[dst].size()) {
-                        e1 = graph[dst].get(i);
-                        if (e1.getDst() == src)
-                            inverse = e1;
-                        i++;
-                    }
-
-                    if (inverse == null) // not found
-                        inverse = new Edge(dst, src, INVERSE, 0);
-
-                    inverse.setInverse(e);
-                    e.setInverse(inverse);
-                }
-            }
-        }
     }
 
 
@@ -588,11 +458,11 @@ public class StateSpaceGraph {
     public String detailedEdges() {
         StringBuilder s = new StringBuilder();
 
-        for (int i = 0; i < graph.length; i++) {
+        for (int i = 0; i < outgoing.length; i++) {
             s.append(i);
             s.append(": \n");
 
-            for (Edge e : graph[i]) {
+            for (Edge e : outgoing[i]) {
                 s.append("   ");
                 s.append(e);
                 s.append("\n");
@@ -606,16 +476,16 @@ public class StateSpaceGraph {
     public String toString() {
         StringBuilder s = new StringBuilder();
 
-        for (int i = 0; i < graph.length; i++) {
+        for (int i = 0; i < outgoing.length; i++) {
             s.append(i);
             s.append(": {");
 
-            for (Edge e : graph[i]) {
+            for (Edge e : outgoing[i]) {
                 s.append(e.getDst());
                 s.append("; ");
             }
 
-            if (!graph[i].isEmpty())
+            if (!outgoing[i].isEmpty())
                 s.delete(s.length() - 2, s.length());
 
             s.append("}\n");

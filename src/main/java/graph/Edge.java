@@ -5,16 +5,12 @@ public class Edge {
     private int src, dst;           // edge's source and destination
     private String label;           // edge's label (operation id)
     private boolean visited;        // indicates whether the edge was visited
-    private int flow, capacity;     // edge's flow and capacity for Dinic's Algorithm
-    private Edge inverse;           // edge going from dst to src
 
     public Edge(int src, int dst, String label, int capacity) {
         this.src = src;
         this.dst = dst;
         this.label = label;
         visited = false;
-        this.capacity = capacity;
-        flow = 0;
     }
 
     /**
@@ -26,14 +22,6 @@ public class Edge {
         return src;
     }
 
-    /**
-     * Sets the inverse edge (going from dst to src).
-     *
-     * @param inverse edge.
-     */
-    public void setInverse(Edge inverse) {
-        this.inverse = inverse;
-    }
 
     /**
      * Returns the edge destination node.
@@ -54,35 +42,6 @@ public class Edge {
     }
 
     /**
-     * Returns the edge remaining capacity.
-     *
-     * @return remaining capacity.
-     */
-    public int getRemainingCapacity() {
-        return capacity - flow;
-    }
-
-    /**
-     * Increments the edge flow value by the given bottleneck.
-     *
-     * @param bottleneck value to increment
-     */
-    public void incFlow(int bottleneck) {
-        flow += bottleneck;
-        if (inverse != null) // edges to the super sink do not have inverse
-            inverse.decFlow(bottleneck);
-    }
-
-    /**
-     * Decrements the edge flow value by the given bottleneck.
-     *
-     * @param bottleneck value to decrement
-     */
-    public void decFlow(int bottleneck) {
-        flow -= bottleneck;
-    }
-
-    /**
      * Checks whether the edge was already visited.
      *
      * @return true when the edge was visited; false otherwise.
@@ -96,28 +55,6 @@ public class Edge {
      */
     public void visit() {
         visited = true;
-    }
-
-    /**
-     * Returns the edge inverse edge.
-     *
-     * @return inverse edge.
-     */
-    public Edge getInverseEdge() {
-        return inverse;
-    }
-
-    /**
-     * Returns the edge's capacity.
-     *
-     * @return capacity
-     */
-    public int getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(int v) {
-        capacity = v;
     }
 
     /**
