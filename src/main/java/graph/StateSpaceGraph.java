@@ -30,12 +30,12 @@ public class StateSpaceGraph {
     // Initial state index
     private static int INITIAL = 0;
 
-    private List<Edge>[] outgoing;          // stores the outgoing edges of all the graph's nodes
-    private List<Edge>[] incoming;          // stores the incoming edges of all the graph's nodes
-    private State[] states;                 // stores the graph states
-    private Map<Long, Integer> nodesById;   // stores the graph's nodes by id
-    private int finalState;                 // stores the graph's final state index
-    private List<Integer>[] prev;           // stores the parents of a node in the BFS tree
+    private int finalState;           // final state index
+    private int numNodes;             // number of nodes in the graph
+    private List<Edge>[] outgoing;    // outgoing edges of all the graph's nodes
+    private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
+    private State[] states;
+    private Map<Long, Integer> nodesById;
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
@@ -69,237 +69,10 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Returns the paths on the SSG.
-     *
-     * @return nominal paths.
-     */
-    public List<List<Edge>> getPaths() {
-        List<List<Integer>> paths = completePaths();
-        List<List<Edge>> nominal = new ArrayList<>(paths.size());
-
-        ArrayList<Edge> n;
-        for (List<Integer> p : paths) {
-            n = new ArrayList<>(p.size() - 1); // 4 nodes = 3 transitions
-
-            for (int i = 0; i < p.size() - 2; i++)  // -2 to remove the sink
-                n.add(findEdge(outgoing[p.get(i)], p.get(i + 1)));
-
-            nominal.add(n);
-        }
-
-        return nominal;
-    }
-
-    /**
-     * A breadth-first search with a twist: a node is only expanded once.
-     * TODO we need a better name for this.
-     *
-     * @return possibly incomplete graph paths.
-     */
-    private List<List<Integer>> twistedBFS() {
-        // Tracks whether nodes have been expanded
-        boolean[] expanded = new boolean[outgoing.length];
-
-        // Stores the nodes to visit next
-        Deque<Integer> q = new ArrayDeque<>(outgoing.length);
-        q.offer(INITIAL);
-
-        // Stores the paths found so far (including incomplete paths)
-        List<List<Integer>> paths = new LinkedList<>();
-
-        // Path with the initial node
-        List<Integer> path = new LinkedList<>();
-        path.add(INITIAL);
-        paths.add(path);
-
-        int node, next;
-
-        while (!q.isEmpty()) {
-            node = q.poll();
-            if (!expanded[node]) {
-                List<Edge> out = outgoing[node];
-
-                for (Edge e : out) {
-                    if (!e.isVisited()) {
-                        next = e.getDst();
-                        e.visit();
-                        q.offer(next);
-                        prev[next].add(node);
-
-                        path = findPath(paths, node);  // TODO there may be a better way of doing this.
-
-                        if (path != null) {
-                            // Cloning for path extension
-                            List<Integer> cpy = new LinkedList<>(path);
-                            cpy.add(next);
-                            paths.add(cpy);
-                        } else {
-                            // Creating a new path
-                            path = new LinkedList<>();
-                            path.add(node);
-                            path.add(next);
-                            paths.add(path);
-                        }
-                    }
-                }
-                expanded[node] = true;
-
-                // When a node is fully expanded we remove the path up until that node form the paths list
-                paths.remove(path);
-            }
-        }
-
-        return paths;
-    }
-
-    /**
-     * Completes the paths resulting from the twisted BFS.
-     *
-     * @return complete paths.
-     */
-    private List<List<Integer>> completePaths() {
-        List<List<Integer>> incomplete = twistedBFS();
-
-        /* Stores the partial paths from the node index to the final state
-         * e.g., in the smallest graph:
-         * partial[0] = [ [0, 1, 3, 9], [0, 2, 6, 9] ]
-         * partial[1] = [ [1, 3, 9], [1, 5, 8, 3, 9] ]
-         */
-        List<List<Integer>>[] partial = initialisePartialPaths();
-
-        // Stores the nodes to extend next. The first node to extend is the final state.
-        Deque<Integer> q = new ArrayDeque<>(outgoing.length);
-        q.offer(outgoing.length - 1);
-
-        // Tracks whether nodes have been expanded
-        boolean[] expanded = new boolean[outgoing.length];
-
-        /* Tracks the current path we're extending in the partial paths list.
-         * e.g., if currentPathIdx[0] = 1 we know partial[0].size() = 2 and partial[0].get(0)
-         * has a partial path from the initial state (0) to the final state (graph.length - 1).
-         */
-        int[] currentPathIdx = new int[outgoing.length];
-
-        // Node being currently expanded
-        int node;
-        List<Integer> nodePrev, path;
-
-        while (!q.isEmpty()) {
-            node = q.poll();
-
-            if (!expanded[node]) {
-                nodePrev = prev[node];
-
-                for (Integer i : nodePrev) {
-                    path = partial[i].get(currentPathIdx[i]);
-                    path.addAll(partial[node].get(0)); // We could change this index for more variety.
-                    q.offer(i);
-
-                    // If the path is complete we should move on to another list
-                    if (isComplete(path)) {
-                        currentPathIdx[i]++;
-                        path = new LinkedList<>();
-                        path.add(i);
-                        partial[i].add(path);
-                    }
-                }
-
-                expanded[node] = true;
-            }
-        }
-
-        // Removing the first element of every partial path
-        cleanPartial(partial);
-
-        // Completing all paths; this array tracks which paths are complete
-        boolean[] complete = new boolean[incomplete.size()];
-        int i = 0, completePaths = 0, last;
-
-        while (completePaths < incomplete.size()) {
-            if (!complete[i]) {
-                path = incomplete.get(i);
-                last = path.get(path.size() - 1);
-                path.addAll(partial[last].get(0)); // As of now this works. The number of paths can "explode".
-                complete[i] = last == finalState;
-
-                if (complete[i])
-                    completePaths++;
-            }
-
-            i = i == incomplete.size() - 1 ? 0 : i + 1;
-        }
-
-        return incomplete;
-    }
-
-    /**
-     * Checks whether a path is complete, i.e., reaches the final state.
-     *
-     * @param path path to check.
-     * @return true if the path is complete; false otherwise.
-     */
-    private boolean isComplete(List<Integer> path) {
-        return path.get(path.size() - 1).equals(finalState);
-    }
-
-    /**
-     * Removes the first element of every partial path.
-     *
-     * @param partial partial paths list.
-     */
-    private void cleanPartial(List<List<Integer>>[] partial) {
-        for (List<List<Integer>> pathList : partial)
-            for (List<Integer> path : pathList)
-                path.remove(0);
-    }
-
-    /**
-     * Initialises the partial paths structure used to complete the paths resulting from the Twisted BFS.
-     *
-     * @return partial paths.
-     */
-    @SuppressWarnings("unchecked")
-    private List<List<Integer>>[] initialisePartialPaths() {
-        List<List<Integer>>[] partial = new LinkedList[outgoing.length];
-        List<Integer> first;
-
-        for (int i = 0; i < partial.length; i++) {
-            first = new LinkedList<>();
-            first.add(i);
-            partial[i] = new LinkedList<>();
-            partial[i].add(first);
-        }
-
-        return partial;
-    }
-
-    /**
-     * Finds the path to extend, i.e., the path in which the last element is the same as the
-     * given value.
-     *
-     * @param paths path list
-     * @param value tail value
-     * @return path
-     */
-    private List<Integer> findPath(List<List<Integer>> paths, int value) {
-        List<Integer> path, found = null;
-        int i = 0;
-
-        while (found == null && i < paths.size()) {
-            path = paths.get(i);
-            if (path.get(path.size() - 1) == value)
-                found = paths.get(i);
-            i++;
-        }
-
-        return found;
-    }
-
-    /**
      * Finds an edge in a node's outgoing edge's list.
      *
-     * @param out  outgoing edges of a node.
-     * @param dst  edge's destination node.
+     * @param out outgoing edges of a node.
+     * @param dst edge's destination node.
      * @return edge or null if it does not exist.
      */
     private Edge findEdge(List<Edge> out, int dst) {
@@ -320,27 +93,154 @@ public class StateSpaceGraph {
 
 
 
+    // Graph Traversal
+
+    /**
+     * A modified version of the standard BFS traversal, starting from the
+     * initial state that returns all the paths up to a node.
+     * E.g. upTo[3]: { {0, 1, 3}, {0, 2, 4, 8, 3}}
+     *
+     * @return all the paths up to a node.
+     */
+    public List<Deque<Integer>>[] pathsTo() {
+        // Tracks whether nodes have been added to the FIFO
+        boolean[] found = new boolean[numNodes];
+        found[finalState] = true;
+
+        Deque<Integer> fifo = new ArrayDeque<>(numNodes);
+        fifo.offer(INITIAL);
+
+        List<Deque<Integer>>[] upTo = initialisePaths(INITIAL);
+
+        int parent, child;
+        while (!fifo.isEmpty()) {
+            parent = fifo.poll();
+            found[parent] = true;
+
+            for (Edge e : outgoing[parent]) {
+                child = e.getDst();
+
+                if (!found[child]) {
+                    fifo.offer(child);
+                    found[child] = true;
+                }
+
+                Deque<Integer> upToChild =
+                        new ArrayDeque<>(upTo[parent].get(upTo[parent].size() - 1));
+                upToChild.offer(child);
+                upTo[child].add(upToChild);
+            }
+        }
+
+        return upTo;
+    }
+
+    /**
+     * A modified version of the standard BFS traversal, starting from the final
+     * state that returns all the paths starting at a node.
+     * E.g. from[3]: {{3, 6, 9}, {3, 4, 7, 6, 9}}
+     *
+     * @return all the paths starting at a node.
+     */
+    public List<Deque<Integer>>[] pathsFrom() {
+        List<Deque<Integer>>[] from = initialisePaths(finalState);
+
+        // Tracks whether nodes have been added to the FIFO
+        boolean[] found = new boolean[numNodes];
+        found[INITIAL] = true;
+
+        Deque<Integer> fifo = new ArrayDeque<>();
+        fifo.offer(finalState);
+
+        int child, parent;
+        while (!fifo.isEmpty()) {
+            child = fifo.poll();
+
+            for (Edge e : incoming[child]) {
+                parent = e.getSrc();
+
+                if (!found[parent]) {
+                    fifo.offer(parent);
+                    found[parent] = true;
+                }
+
+                Deque<Integer> fromParent = new ArrayDeque<>(from[child].get(from[child].size() - 1));
+                fromParent.addFirst(parent);
+                from[parent].add(fromParent);
+            }
+        }
+
+        return from;
+    }
+
+    /**
+     * Completes all the paths.
+     *
+     * @return complete paths.
+     */
+    public List<Deque<Integer>> completePaths() {
+        List<Deque<Integer>>[] upTo = pathsTo();
+        List<Deque<Integer>>[] from = pathsFrom();
+
+        List<Deque<Integer>> completePaths = new LinkedList<>();
+        Deque<Integer> path;
+
+        for (int i = 1; i < numNodes - 1; i++)
+            for (Deque<Integer> f : from[i]) {
+                f.poll();
+                for (Deque<Integer> u : upTo[i]) {
+                    path = new ArrayDeque<>(u);
+                    path.addAll(f);
+                    completePaths.add(path);
+                }
+            }
+
+        return completePaths;
+    }
+
+    /**
+     * Returns the initialisation of a structure that will store the different
+     * paths up to a node.
+     * e.g. paths[3]: { {0, 1, 3}, {0, 2, 4, 8, 3} }
+     *
+     * @param firstNode the first node to have a path.
+     * @return upTo structure.
+     */
+    @SuppressWarnings("unchecked")
+    private List<Deque<Integer>>[] initialisePaths(int firstNode) {
+        List<Deque<Integer>>[] paths = new List[numNodes];
+
+        // a resize will only happen when there are > 10 different ways of reaching a node.
+        for (int i = 0; i < numNodes; i++)
+            paths[i] = new ArrayList<>();
+
+        Deque<Integer> initialPath = new ArrayDeque<>();
+        initialPath.add(firstNode);
+        paths[firstNode].add(initialPath);
+
+        return paths;
+    }
+
+
+
     // Graph construction
 
     /**
-     * Initialises the outgoing, incoming, state, and prev.
+     * Initialises the outgoing, incoming, and states.
      */
     @SuppressWarnings("unchecked")
     private void initialiseStructures() {
-        outgoing = new List[nodesById.size() + 1];
-        for (int i = 0; i < outgoing.length; i++)
+        numNodes = nodesById.size() + 1;
+        outgoing = new List[numNodes];
+        for (int i = 0; i < numNodes; i++)
             outgoing[i] = new ArrayList<>(INITIAL_EDGES);
 
-        incoming = new List[nodesById.size() + 1];
-        for (int i = 0; i < incoming.length; i++)
+        incoming = new List[numNodes];
+        for (int i = 0; i < numNodes; i++)
             incoming[i] = new ArrayList<>(INITIAL_EDGES);
 
-        prev = new List[outgoing.length];
-        for (int i = 0; i < prev.length; i++)
-            prev[i] = new LinkedList<>();
-
-        states = new State[outgoing.length];
-        finalState = outgoing.length - 1;
+        states = new State[numNodes];
+        finalState = numNodes - 1;
     }
 
     /**
@@ -384,12 +284,12 @@ public class StateSpaceGraph {
 
                 int srcId = nodesById.get(src);
                 int dstId = nodesById.get(dst);
-                edge = new Edge(srcId, dstId, label, 1);
+                edge = new Edge(srcId, dstId, label);
 
                 if (!outgoing[srcId].contains(edge))
                     outgoing[srcId].add(edge);
 
-                if(!incoming[dstId].contains(edge))
+                if (!incoming[dstId].contains(edge))
                     incoming[dstId].add(edge);
 
             } else if (isNodeDescription(line)) {
@@ -409,12 +309,12 @@ public class StateSpaceGraph {
      * Adds an edge from all the final states to the super sink node.
      */
     private void addFinalState() {
-       for (int i = 0; i < outgoing.length - 1; i++)
-           if (outgoing[i].isEmpty()) {
-               Edge edge = new Edge(i, finalState, FINAL, Integer.MAX_VALUE);
-               outgoing[i].add(edge);
-               incoming[finalState].add(edge);
-           }
+        for (int i = 0; i < outgoing.length - 1; i++)
+            if (outgoing[i].isEmpty()) {
+                Edge edge = new Edge(i, finalState, FINAL);
+                outgoing[i].add(edge);
+                incoming[finalState].add(edge);
+            }
     }
 
     /**
@@ -438,70 +338,57 @@ public class StateSpaceGraph {
     }
 
 
+
     // Debugging
 
     /**
-     * Returns a string representation of the prev data structure.
+     * Returns a string representation of the given structure.
      *
-     * @return string of prev.
+     * @param paths possible paths up to a node or from a node.
+     * @return string representation of the paths.
      */
-    public String prevToString() {
-        StringBuilder s = new StringBuilder("prev: \n");
+    public String pathsToString(String pathsName, List<Deque<Integer>>[] paths) {
+        StringBuilder s = new StringBuilder(pathsName);
+        s.append(": \n");
 
-        for (int i = 0; i < prev.length; i++) {
+        for (int i = 0; i < numNodes; i++) {
             s.append("[").append(i).append("]: ");
 
-            if (!prev[i].isEmpty())
-                for (Integer j : prev[i])
-                    s.append(j).append(" -> ");
-
-            s.append("/").append("\n");
+            for (Deque<Integer> path : paths[i]) {
+                if (path.isEmpty())
+                    s.append("{}");
+                else {
+                    s.append("{");
+                    for (Integer j : path)
+                        s.append(j).append(", ");
+                    s.delete(s.length() - 2, s.length());
+                    s.append("}, ");
+                    s.deleteCharAt(s.length() - 2);
+                }
+            }
+            s.append("\n");
         }
 
         return s.toString();
     }
 
     /**
-     * Returns a string representation of the graph with detailed information on the edges.
+     * Returns a string representation of the given structure.
      *
-     * @return string representation of the graph
+     * @param complete complete paths.
+     * @return representation of the given structure
      */
-    public String detailedEdgestoString() {
-        StringBuilder s = new StringBuilder();
+    public String completeToString(List<Deque<Integer>> complete) {
+        StringBuilder s = new StringBuilder("[");
+        s.append(complete.size()).append("]\n");
 
-        for (int i = 0; i < outgoing.length; i++) {
-            s.append(i);
-            s.append(": \n");
+        for (Deque<Integer> path : complete) {
+            s.append("{");
 
-            for (Edge e : outgoing[i]) {
-                s.append("   ");
-                s.append(e);
-                s.append("\n");
-            }
-        }
+            for (Integer n : path)
+                s.append(n).append(", ");
 
-        return s.toString();
-    }
-
-    /**
-     * Incoming to string
-     * @return string representation of the incoming variable.
-     */
-    public String incomingToString() {
-        StringBuilder s = new StringBuilder();
-
-        for (int i = 0; i < incoming.length; i++) {
-            s.append(i);
-            s.append(": {");
-
-            for (Edge e : incoming[i]) {
-                s.append(e.getSrc());
-                s.append("; ");
-            }
-
-            if (!incoming[i].isEmpty())
-                s.delete(s.length() - 2, s.length());
-
+            s.delete(s.length() - 2, s.length());
             s.append("}\n");
         }
 
@@ -509,12 +396,13 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Outgoing to string
-     * @return string representation of the outgoing variable.
+     * Graph to string.
+     *
+     * @param in indicates whether to print incoming or outgoing edges.
+     * @return string representation of the state space graph.
      */
-    @Override
-    public String toString() {
-        StringBuilder s = new StringBuilder();
+    public String toString(boolean in) {
+        StringBuilder s = in ? new StringBuilder("incoming: \n") : new StringBuilder("outgoing: \n");
 
         for (int i = 0; i < outgoing.length; i++) {
             s.append(i);
