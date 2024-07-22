@@ -60,6 +60,16 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Returns the transition label of originating a state.
+     * @param state destination state
+     *
+     * @return transition label.
+     */
+    public String getStateTransition (int state) {
+        return getState(state).getTransitionLabel();
+    }
+
+    /**
      * Returns the graph's initial state.
      *
      * @return initial state.
@@ -125,8 +135,7 @@ public class StateSpaceGraph {
                     found[child] = true;
                 }
 
-                Deque<Integer> upToChild =
-                        new ArrayDeque<>(upTo[parent].get(upTo[parent].size() - 1));
+                Deque<Integer> upToChild = new ArrayDeque<>(upTo[parent].get(upTo[parent].size() - 1));
                 upToChild.offer(child);
                 upTo[child].add(upToChild);
             }
@@ -190,6 +199,8 @@ public class StateSpaceGraph {
                 f.poll();       // removing head (duplicates)
                 f.removeLast(); // removing tail (super final state)
                 for (Deque<Integer> u : upTo[i]) {
+                    if(u.peekFirst() == INITIAL)
+                        u.poll();   // removing initial state
                     path = new ArrayDeque<>(u);
                     path.addAll(f);
                     completePaths.add(path);
@@ -197,6 +208,22 @@ public class StateSpaceGraph {
             }
 
         return completePaths;
+    }
+
+    /**
+     * Returns an array of the path transitions.
+     * @param path of nodes in the graph.
+     *
+     * @return array of path transitions.
+     */
+    public String[] getPathTransitions(Deque<Integer> path) {
+        String[] transitions = new String[path.size()];
+
+        int i = 0;
+        while (!path.isEmpty() && i < transitions.length)
+            transitions[i++] = getStateTransition(path.poll());
+
+        return transitions;
     }
 
     /**

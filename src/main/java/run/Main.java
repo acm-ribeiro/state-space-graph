@@ -24,6 +24,14 @@ public class Main {
         System.out.println("------------------------------- COMPLETE -------------------------------");
         List<Deque<Integer>> complete = ssg.completePaths();
         System.out.println(ssg.completeToString(complete));
+
+        System.out.println("Transitions for path: {2, 4, 7, 4, 7, 6}");
+        testTransitions(ssg);
     }
 
+    private static void testTransitions(StateSpaceGraph ssg) {
+        String[] transitions = ssg.getPathTransitions(ssg.completePaths().get(19));
+        for (String t : transitions)
+            System.out.print(t + " ");
+    }
 }
