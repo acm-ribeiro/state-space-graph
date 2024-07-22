@@ -187,7 +187,8 @@ public class StateSpaceGraph {
 
         for (int i = 1; i < numNodes - 1; i++)
             for (Deque<Integer> f : from[i]) {
-                f.poll();
+                f.poll();       // removing head (duplicates)
+                f.removeLast(); // removing tail (super final state)
                 for (Deque<Integer> u : upTo[i]) {
                     path = new ArrayDeque<>(u);
                     path.addAll(f);
