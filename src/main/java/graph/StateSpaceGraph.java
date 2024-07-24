@@ -78,29 +78,6 @@ public class StateSpaceGraph {
         return states[INITIAL];
     }
 
-    /**
-     * Finds an edge in a node's outgoing edge's list.
-     *
-     * @param out outgoing edges of a node.
-     * @param dst edge's destination node.
-     * @return edge or null if it does not exist.
-     */
-    private Edge findEdge(List<Edge> out, int dst) {
-        Edge e, edge = null;
-        int i = 0;
-
-        while (edge == null && i < out.size()) {
-            e = out.get(i);
-
-            if (e.getDst() == dst)
-                edge = e;
-
-            i++;
-        }
-
-        return edge;
-    }
-
 
 
     // Graph Traversal
@@ -112,7 +89,7 @@ public class StateSpaceGraph {
      *
      * @return all the paths up to a node.
      */
-    public List<Deque<Integer>>[] pathsTo() {
+    private List<Deque<Integer>>[] pathsTo() {
         // Tracks whether nodes have been added to the FIFO
         boolean[] found = new boolean[numNodes];
         found[finalState] = true;
@@ -151,7 +128,7 @@ public class StateSpaceGraph {
      *
      * @return all the paths starting at a node.
      */
-    public List<Deque<Integer>>[] pathsFrom() {
+    private List<Deque<Integer>>[] pathsFrom() {
         List<Deque<Integer>>[] from = initialisePaths(finalState);
 
         // Tracks whether nodes have been added to the FIFO
@@ -187,7 +164,7 @@ public class StateSpaceGraph {
      *
      * @return complete paths.
      */
-    public List<Deque<Integer>> completePaths() {
+    public List<Deque<Integer>> getPaths() {
         List<Deque<Integer>>[] upTo = pathsTo();
         List<Deque<Integer>>[] from = pathsFrom();
 
@@ -199,7 +176,7 @@ public class StateSpaceGraph {
                 f.poll();       // removing head (duplicates)
                 f.removeLast(); // removing tail (super final state)
                 for (Deque<Integer> u : upTo[i]) {
-                    if(u.peekFirst() == INITIAL)
+                    if (!u.isEmpty() && u.peekFirst() == INITIAL)
                         u.poll();   // removing initial state
                     path = new ArrayDeque<>(u);
                     path.addAll(f);
