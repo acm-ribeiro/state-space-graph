@@ -27,6 +27,14 @@ public class StateSpaceGraph {
     private static int INITIAL_NODES = 1000;
     private static int INITIAL_EDGES = 30;
 
+    // complete & incomplete paths
+    private static final int PATH_CATEGORIES = 2;
+    private static final int COMPLETE = 0;
+    private static final int INCOMPLETE = 1;
+
+    private static final int NUM_PATHS = 10;
+    private static final int PATH_LENGTH = 10;
+
     // Initial state index
     private static int INITIAL = 0;
 
@@ -61,11 +69,11 @@ public class StateSpaceGraph {
 
     /**
      * Returns the transition label of originating a state.
-     * @param state destination state
      *
+     * @param state destination state
      * @return transition label.
      */
-    public String getStateTransition (int state) {
+    public String getStateTransition(int state) {
         return getState(state).getTransitionLabel();
     }
 
@@ -79,46 +87,57 @@ public class StateSpaceGraph {
     }
 
 
-
     // Graph Traversal
 
     /**
      * A modified version of the standard BFS traversal, starting from the
-     * initial state that returns all the paths up to a node.
-     * E.g. upTo[3]: { {0, 1, 3}, {0, 2, 4, 8, 3}}
+     * initial state, returning a two-position array with a list of complete and incomplete
+     * paths.
      *
-     * @return all the paths up to a node.
+     * @return both complete and incomplete paths.
      */
-    private List<Deque<Integer>>[] pathsTo() {
+    @SuppressWarnings("unchecked")
+    public List<Deque<Integer>>[] pathsTo() {
         // Tracks whether nodes have been added to the FIFO
         boolean[] found = new boolean[numNodes];
         found[finalState] = true;
 
         Deque<Integer> fifo = new ArrayDeque<>(numNodes);
         fifo.offer(INITIAL);
+        found[INITIAL] = true;
 
-        List<Deque<Integer>>[] upTo = initialisePaths(INITIAL);
+        List<Deque<Integer>>[] paths = new List[PATH_CATEGORIES];
+        paths[COMPLETE] = new LinkedList<>();
+        paths[INCOMPLETE] = new LinkedList<>();
+
+        Deque<Integer>[] upTo = new Deque[numNodes];
+        for (int i = 0; i < numNodes; i++)
+            upTo[i] = new ArrayDeque<>(PATH_LENGTH);
+        upTo[INITIAL].add(INITIAL);
 
         int parent, child;
         while (!fifo.isEmpty()) {
             parent = fifo.poll();
-            found[parent] = true;
 
             for (Edge e : outgoing[parent]) {
                 child = e.getDst();
+                Deque<Integer> upToChild = new ArrayDeque<>(upTo[parent]);
+                upToChild.offer(child);
 
                 if (!found[child]) {
                     fifo.offer(child);
                     found[child] = true;
+                    upTo[child] = upToChild;
+                } else if (child == finalState) {
+                    paths[COMPLETE].add(upToChild);
+                } else {
+                    paths[INCOMPLETE].add(upToChild);
                 }
 
-                Deque<Integer> upToChild = new ArrayDeque<>(upTo[parent].get(upTo[parent].size() - 1));
-                upToChild.offer(child);
-                upTo[child].add(upToChild);
             }
         }
 
-        return upTo;
+        return paths;
     }
 
     /**
@@ -128,7 +147,7 @@ public class StateSpaceGraph {
      *
      * @return all the paths starting at a node.
      */
-    private List<Deque<Integer>>[] pathsFrom() {
+    public List<Deque<Integer>>[] pathsFrom() {
         List<Deque<Integer>>[] from = initialisePaths(finalState);
 
         // Tracks whether nodes have been added to the FIFO
@@ -137,6 +156,7 @@ public class StateSpaceGraph {
 
         Deque<Integer> fifo = new ArrayDeque<>();
         fifo.offer(finalState);
+        found[finalState] = true;
 
         int child, parent;
         while (!fifo.isEmpty()) {
@@ -145,14 +165,16 @@ public class StateSpaceGraph {
             for (Edge e : incoming[child]) {
                 parent = e.getSrc();
 
+                for (Deque<Integer> path : from[child]) {
+                    Deque<Integer> fromParent = new ArrayDeque<>(path);
+                    fromParent.addFirst(parent);
+                    from[parent].add(fromParent);
+                }
+
                 if (!found[parent]) {
                     fifo.offer(parent);
                     found[parent] = true;
                 }
-
-                Deque<Integer> fromParent = new ArrayDeque<>(from[child].get(from[child].size() - 1));
-                fromParent.addFirst(parent);
-                from[parent].add(fromParent);
             }
         }
 
@@ -165,32 +187,29 @@ public class StateSpaceGraph {
      * @return complete paths.
      */
     public List<Deque<Integer>> getPaths() {
-        List<Deque<Integer>>[] upTo = pathsTo();
-        List<Deque<Integer>>[] from = pathsFrom();
+        List<Deque<Integer>>[] paths = pathsTo();
+        List<Deque<Integer>>[] from  = pathsFrom();
 
-        List<Deque<Integer>> completePaths = new LinkedList<>();
-        Deque<Integer> path;
+        int last;
+        for (Deque<Integer> path : paths[INCOMPLETE]) {
+            assert !path.isEmpty();
+            last = path.pollLast();
 
-        for (int i = 1; i < numNodes - 1; i++)
-            for (Deque<Integer> f : from[i]) {
-                f.poll();       // removing head (duplicates)
-                f.removeLast(); // removing tail (super final state)
-                for (Deque<Integer> u : upTo[i]) {
-                    if (!u.isEmpty() && u.peekFirst() == INITIAL)
-                        u.poll();   // removing initial state
-                    path = new ArrayDeque<>(u);
-                    path.addAll(f);
-                    completePaths.add(path);
-                }
+            for (Deque<Integer> fromLast : from[last]) {
+                Deque<Integer> cpy = new ArrayDeque<>(path);
+                cpy.addAll(fromLast);
+                paths[COMPLETE].add(cpy);
             }
 
-        return completePaths;
+        }
+
+        return paths[COMPLETE];
     }
 
     /**
      * Returns an array of the path transitions.
-     * @param path of nodes in the graph.
      *
+     * @param path of nodes in the graph.
      * @return array of path transitions.
      */
     public String[] getPathTransitions(Deque<Integer> path) {
@@ -215,17 +234,15 @@ public class StateSpaceGraph {
     private List<Deque<Integer>>[] initialisePaths(int firstNode) {
         List<Deque<Integer>>[] paths = new List[numNodes];
 
-        // a resize will only happen when there are > 10 different ways of reaching a node.
         for (int i = 0; i < numNodes; i++)
-            paths[i] = new ArrayList<>();
+            paths[i] = new ArrayList<>(NUM_PATHS);
 
-        Deque<Integer> initialPath = new ArrayDeque<>();
+        Deque<Integer> initialPath = new ArrayDeque<>(PATH_LENGTH);
         initialPath.add(firstNode);
         paths[firstNode].add(initialPath);
 
         return paths;
     }
-
 
 
     // Graph construction
@@ -291,11 +308,8 @@ public class StateSpaceGraph {
                 int dstId = nodesById.get(dst);
                 edge = new Edge(srcId, dstId, label);
 
-                if (!outgoing[srcId].contains(edge))
-                    outgoing[srcId].add(edge);
-
-                if (!incoming[dstId].contains(edge))
-                    incoming[dstId].add(edge);
+                outgoing[srcId].add(edge);
+                incoming[dstId].add(edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
@@ -343,7 +357,6 @@ public class StateSpaceGraph {
     }
 
 
-
     // Debugging
 
     /**
@@ -356,7 +369,7 @@ public class StateSpaceGraph {
         StringBuilder s = new StringBuilder(pathsName);
         s.append(": \n");
 
-        for (int i = 0; i < numNodes; i++) {
+        for (int i = 0; i < paths.length; i++) {
             s.append("[").append(i).append("]: ");
 
             for (Deque<Integer> path : paths[i]) {
