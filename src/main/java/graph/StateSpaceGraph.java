@@ -200,7 +200,6 @@ public class StateSpaceGraph {
                 cpy.addAll(fromLast);
                 paths[COMPLETE].add(cpy);
             }
-
         }
 
         return paths[COMPLETE];
@@ -213,11 +212,12 @@ public class StateSpaceGraph {
      * @return array of path transitions.
      */
     public String[] getPathTransitions(Deque<Integer> path) {
-        String[] transitions = new String[path.size()];
+        String[] transitions = new String[path.size() - 2]; // removing initial and final states
 
         int i = 0;
-        while (!path.isEmpty() && i < transitions.length)
-            transitions[i++] = getStateTransition(path.poll());
+        for (Integer state : path)
+            if (state != INITIAL && state != finalState)
+                transitions[i++] = getStateTransition(state);
 
         return transitions;
     }
