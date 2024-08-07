@@ -24,6 +24,5 @@ public class Main {
         List<Deque<Integer>> complete = ssg.getPaths();
         System.out.println(ssg.completeToString(complete));
         System.out.println("---------------------------------------------------------------------");
-
     }
 }

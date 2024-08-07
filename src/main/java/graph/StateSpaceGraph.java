@@ -86,7 +86,6 @@ public class StateSpaceGraph {
         return states[INITIAL];
     }
 
-
     // Graph Traversal
 
     /**
