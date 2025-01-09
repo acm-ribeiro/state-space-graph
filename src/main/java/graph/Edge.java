@@ -2,8 +2,8 @@ package graph;
 
 public class Edge {
 
-    private int src, dst;           // edge's source and destination
-    private String label;           // edge's label (operation id)
+    private int src, dst;               // edge's source and destination
+    private String label;           // edge's id and label (operation id)
 
     public Edge(int src, int dst, String label) {
         this.src = src;

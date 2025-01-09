@@ -6,23 +6,99 @@ import java.util.Deque;
 import java.util.List;
 
 public class Main {
+
+    private static final String STATS = "------------------------- STATS -------------------------";
+    private static final String NODES = "------------------------- NODES -------------------------";
+    private static final String GRAPH = "------------------------- GRAPH -------------------------";
+    private static final String SPLIT = "---------------------------------------------------------";
+
     public static void main (String[] args) {
         StateSpaceGraph ssg = new StateSpaceGraph(args[0]);
+        List<Deque<Integer>> paths = ssg.getPaths();
 
-        System.out.println("------------------------------- GRAPH -------------------------------");
-        System.out.println(ssg.toString(true));  // incoming
-        System.out.println(ssg.toString(false)); // outgoing
-        System.out.println("---------------------------------------------------------------------\n");
+        printGraph(ssg);
+        printStats(ssg, paths);
+    }
 
-        List<Deque<Integer>>[] paths = ssg.pathsTo();
-        System.out.println(ssg.pathsToString("all", paths));
+    /**
+     * Computes the average path size.
+     *
+     * @param paths collection
+     * @return average path size.
+     */
+    private static double averagePathSize(List<Deque<Integer>> paths) {
+        long sum = 0L;
 
-        List<Deque<Integer>>[] from = ssg.pathsFrom();
-        System.out.println(ssg.pathsToString("from", from));
+        for (Deque<Integer> path: paths)
+            sum += path.size();
 
-        System.out.println("------------------------------- PATHS -------------------------------");
-        List<Deque<Integer>> complete = ssg.getPaths();
-        System.out.println(ssg.completeToString(complete));
-        System.out.println("---------------------------------------------------------------------");
+        return (double) sum / paths.size();
+    }
+
+    /**
+     * Finds the largest path size in the given collection.
+     *
+     * @param paths collection
+     * @return largest path size.
+     */
+    private static int largestPathSize(List<Deque<Integer>> paths) {
+        int max = 0;
+
+        for (Deque<Integer> path: paths)
+            if(path.size() > max)
+                max = path.size();
+
+        return max;
+    }
+
+    /**
+     * Finds the shortest path size in the given collection.
+     *
+     * @param paths collection
+     * @return shortest path size.
+     */
+    private static int shortestPathSize(List<Deque<Integer>> paths) {
+        int min = (int) averagePathSize(paths);
+
+        for (Deque<Integer> path: paths)
+            if(path.size() < min)
+                min = path.size();
+
+        return min;
+    }
+
+    /**
+     * Prints graph data.
+     *
+     * @param ssg graph.
+     */
+    private static void printGraph(StateSpaceGraph ssg) {
+        System.out.println(NODES);
+        System.out.println(ssg.nodesToString());
+
+        // incoming
+        System.out.println(GRAPH);
+        System.out.println(ssg.toString(true));
+
+        // outgoing
+        System.out.println(SPLIT);
+        System.out.println(ssg.toString(false));
+    }
+
+    /**
+     * Prints the number of nodes and edges in the graph. Also prints the number of complete paths,
+     * the average path size, largest and shortest path sizes.
+     *
+     * @param ssg state space graph.
+     * @param paths collection.
+     */
+    private static void printStats(StateSpaceGraph ssg, List<Deque<Integer>> paths) {
+        System.out.println(STATS);
+        System.out.printf("nodes      :   %d\n", ssg.getNumNodes());
+        System.out.printf("edges      :   %d\n", ssg.getNumEdges());
+        System.out.printf("paths      :   %d\n", paths.size());
+        System.out.printf("avg size   :   %.3f\n", averagePathSize(paths));
+        System.out.printf("max size   :   %d\n", largestPathSize(paths));
+        System.out.printf("min size   :   %d\n", shortestPathSize(paths));
     }
 }

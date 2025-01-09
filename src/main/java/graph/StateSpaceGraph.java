@@ -44,6 +44,7 @@ public class StateSpaceGraph {
     private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
     private State[] states;
     private Map<Long, Integer> nodesById;
+    private Map<String, Edge> edgesById;
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
@@ -68,14 +69,23 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Returns the transition label of originating a state.
+     * Returns the number of nodes in the graph.
      *
-     * @param state destination state
-     * @return transition label.
+     * @return number of nodes.
      */
-    public String getStateTransition(int state) {
-        return getState(state).getTransitionLabel();
+    public int getNumNodes() {
+        return numNodes;
     }
+
+    /**
+     * Returns the number of edges in the graph.
+     *
+     * @return number of edges.
+     */
+    public int getNumEdges() {
+        return edgesById.size();
+    }
+
 
     /**
      * Returns the graph's initial state.
@@ -214,9 +224,14 @@ public class StateSpaceGraph {
         String[] transitions = new String[path.size() - 2]; // removing initial and final states
 
         int i = 0;
-        for (Integer state : path)
-            if (state != INITIAL && state != finalState)
-                transitions[i++] = getStateTransition(state);
+        Iterator<Integer> it = path.iterator();
+
+        int src, dst = -1;
+        while (it.hasNext()) {
+            src = i == 0? it.next() : dst;
+            dst = it.next();
+            transitions[i++] = edgesById.get(src + "->" + dst).getLabel();
+        }
 
         return transitions;
     }
@@ -252,6 +267,7 @@ public class StateSpaceGraph {
     @SuppressWarnings("unchecked")
     private void initialiseStructures() {
         numNodes = nodesById.size() + 1;
+
         outgoing = new List[numNodes];
         for (int i = 0; i < numNodes; i++)
             outgoing[i] = new ArrayList<>(INITIAL_EDGES);
@@ -262,6 +278,7 @@ public class StateSpaceGraph {
 
         states = new State[numNodes];
         finalState = numNodes - 1;
+        edgesById = new HashMap<>();
     }
 
     /**
@@ -309,11 +326,12 @@ public class StateSpaceGraph {
 
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
+                edgesById.put(src + "->" + dst, edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
-                long id = Long.parseLong(line.split(SPACE)[0]);
-                int nodeId = nodesById.get(id);
+                long dotId = Long.parseLong(line.split(SPACE)[0]);
+                int nodeId = nodesById.get(dotId);
                 states[nodeId] = state;
             }
 
@@ -392,14 +410,14 @@ public class StateSpaceGraph {
     /**
      * Returns a string representation of the given structure.
      *
-     * @param complete complete paths.
+     * @param paths collection.
      * @return representation of the given structure
      */
-    public String completeToString(List<Deque<Integer>> complete) {
+    public String pathsToString(List<Deque<Integer>> paths) {
         StringBuilder s = new StringBuilder("[");
-        s.append(complete.size()).append("]\n");
+        s.append(paths.size()).append("]\n");
 
-        for (Deque<Integer> path : complete) {
+        for (Deque<Integer> path : paths) {
             s.append("{");
 
             for (Integer n : path)
@@ -420,21 +438,36 @@ public class StateSpaceGraph {
      */
     public String toString(boolean in) {
         StringBuilder s = in ? new StringBuilder("incoming: \n") : new StringBuilder("outgoing: \n");
+        List<Edge>[] toPrint = in ? incoming : outgoing;
 
-        for (int i = 0; i < outgoing.length; i++) {
-            s.append(i);
-            s.append(": {");
+        for (int i = 0; i < toPrint.length; i++) {
+            s.append(i).append(": {");
 
-            for (Edge e : outgoing[i]) {
-                s.append(e.getDst());
-                s.append("; ");
-            }
+            for (Edge e : toPrint[i])
+                if(in)
+                    s.append(e.getSrc()).append("; ");
+                else
+                    s.append(e.getDst()).append("; ");
 
-            if (!outgoing[i].isEmpty())
+            if (!toPrint[i].isEmpty())
                 s.delete(s.length() - 2, s.length());
 
             s.append("}\n");
         }
+
+        return s.toString();
+    }
+
+    /**
+     * Prints the graph's nodes correspondence.
+     *
+     * @return internal id : dot id
+     */
+    public String nodesToString() {
+        StringBuilder s = new StringBuilder();
+
+        for (Long id: nodesById.keySet())
+            s.append(nodesById.get(id)).append(": ").append(id).append("\n");
 
         return s.toString();
     }
