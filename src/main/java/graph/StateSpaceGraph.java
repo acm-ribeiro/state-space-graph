@@ -222,6 +222,7 @@ public class StateSpaceGraph {
      */
     public String[] getPathTransitions(Deque<Integer> path) {
         String[] transitions = new String[path.size() - 2]; // removing initial and final states
+        path.pollLast();
 
         int i = 0;
         Iterator<Integer> it = path.iterator();
@@ -380,7 +381,7 @@ public class StateSpaceGraph {
     /**
      * Returns a string representation of the graph's edges.
      *
-     * @return edges by id. 
+     * @return edges by id.
      */
     public String edgesToString() {
         StringBuilder s = new StringBuilder();

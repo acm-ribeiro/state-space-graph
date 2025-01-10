@@ -2,6 +2,7 @@ package run;
 
 import graph.StateSpaceGraph;
 
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
@@ -10,6 +11,7 @@ public class Main {
     private static final String STATS = "------------------------- STATS -------------------------";
     private static final String NODES = "------------------------- NODES -------------------------";
     private static final String EDGES = "------------------------- EDGES -------------------------";
+    private static final String PATHS = "------------------------- PATHS -------------------------";
     private static final String GRAPH = "------------------------- GRAPH -------------------------";
     private static final String SPLIT = "---------------------------------------------------------";
 
@@ -17,10 +19,8 @@ public class Main {
         StateSpaceGraph ssg = new StateSpaceGraph(args[0]);
         List<Deque<Integer>> paths = ssg.getPaths();
 
-//        printGraph(ssg);
-//        printStats(ssg, paths);
-        System.out.println(EDGES);
-        System.out.println(ssg.edgesToString());
+        printGraph(ssg, paths);
+        printStats(ssg, paths);
     }
 
     /**
@@ -75,10 +75,12 @@ public class Main {
      *
      * @param ssg graph.
      */
-    private static void printGraph(StateSpaceGraph ssg) {
+    private static void printGraph(StateSpaceGraph ssg, List<Deque<Integer>> paths) {
+        // nodes by id
         System.out.println(NODES);
         System.out.println(ssg.nodesToString());
 
+        // edges by id
         System.out.println(EDGES);
         System.out.println(ssg.edgesToString());
 
@@ -89,6 +91,10 @@ public class Main {
         // outgoing
         System.out.println(SPLIT);
         System.out.println(ssg.toString(false));
+
+        // paths
+        System.out.println(PATHS);
+        System.out.println(ssg.pathsToString(paths));
     }
 
     /**
