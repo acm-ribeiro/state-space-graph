@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>magma</groupId>
+    <groupId>icepick</groupId>
     <artifactId>state-space-graph</artifactId>
     <version>1.0</version>
 
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>com.github.acm-ribeiro</groupId>
             <artifactId>simplified-tla-state-parser</artifactId>
-            <version>1881b833ca</version>
+            <version>b7d6b07f1e</version>
         </dependency>
     </dependencies>
 
