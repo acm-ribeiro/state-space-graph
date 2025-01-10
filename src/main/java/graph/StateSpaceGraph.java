@@ -44,7 +44,7 @@ public class StateSpaceGraph {
     private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
     private State[] states;
     private Map<Long, Integer> nodesById;
-    private Map<String, Edge> edgesById;
+    private Map<Integer, Edge> edgesById;
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
@@ -326,7 +326,8 @@ public class StateSpaceGraph {
 
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
-                edgesById.put(src + "->" + dst, edge);
+                String edgeId = src + "->" + dst;
+                edgesById.put(edgeId.hashCode(), edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
@@ -375,37 +376,6 @@ public class StateSpaceGraph {
 
 
     // Debugging
-
-    /**
-     * Returns a string representation of the given structure.
-     *
-     * @param paths possible paths up to a node or from a node.
-     * @return string representation of the paths.
-     */
-    public String pathsToString(String pathsName, List<Deque<Integer>>[] paths) {
-        StringBuilder s = new StringBuilder(pathsName);
-        s.append(": \n");
-
-        for (int i = 0; i < paths.length; i++) {
-            s.append("[").append(i).append("]: ");
-
-            for (Deque<Integer> path : paths[i]) {
-                if (path.isEmpty())
-                    s.append("{}");
-                else {
-                    s.append("{");
-                    for (Integer j : path)
-                        s.append(j).append(", ");
-                    s.delete(s.length() - 2, s.length());
-                    s.append("}, ");
-                    s.deleteCharAt(s.length() - 2);
-                }
-            }
-            s.append("\n");
-        }
-
-        return s.toString();
-    }
 
     /**
      * Returns a string representation of the given structure.
