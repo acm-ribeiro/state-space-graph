@@ -44,7 +44,7 @@ public class StateSpaceGraph {
     private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
     private State[] states;
     private Map<Long, Integer> nodesById;
-    private Map<Integer, Edge> edgesById;
+    private Map<String, Edge> edgesById;
 
     public StateSpaceGraph(String filePath) {
         nodesById = new HashMap<>(INITIAL_NODES);
@@ -326,8 +326,8 @@ public class StateSpaceGraph {
 
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
-                String edgeId = src + "->" + dst;
-                edgesById.put(edgeId.hashCode(), edge);
+
+                edgesById.put(srcId + "->" + dstId, edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(line.split(QUOTE)[1]);
@@ -376,6 +376,23 @@ public class StateSpaceGraph {
 
 
     // Debugging
+
+    /**
+     * Returns a string representation of the graph's edges.
+     *
+     * @return edges by id. 
+     */
+    public String edgesToString() {
+        StringBuilder s = new StringBuilder();
+
+        for (Map.Entry<String, Edge> e : edgesById.entrySet())
+            s.append(e.getKey())
+                    .append(": ")
+                    .append(e.getValue().getLabel())
+                    .append("\n");
+
+        return s.toString();
+    }
 
     /**
      * Returns a string representation of the given structure.

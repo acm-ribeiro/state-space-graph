@@ -9,6 +9,7 @@ public class Main {
 
     private static final String STATS = "------------------------- STATS -------------------------";
     private static final String NODES = "------------------------- NODES -------------------------";
+    private static final String EDGES = "------------------------- EDGES -------------------------";
     private static final String GRAPH = "------------------------- GRAPH -------------------------";
     private static final String SPLIT = "---------------------------------------------------------";
 
@@ -16,8 +17,10 @@ public class Main {
         StateSpaceGraph ssg = new StateSpaceGraph(args[0]);
         List<Deque<Integer>> paths = ssg.getPaths();
 
-        printGraph(ssg);
-        printStats(ssg, paths);
+//        printGraph(ssg);
+//        printStats(ssg, paths);
+        System.out.println(EDGES);
+        System.out.println(ssg.edgesToString());
     }
 
     /**
@@ -75,6 +78,9 @@ public class Main {
     private static void printGraph(StateSpaceGraph ssg) {
         System.out.println(NODES);
         System.out.println(ssg.nodesToString());
+
+        System.out.println(EDGES);
+        System.out.println(ssg.edgesToString());
 
         // incoming
         System.out.println(GRAPH);
