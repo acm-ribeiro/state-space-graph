@@ -312,15 +312,16 @@ public class StateSpaceGraph {
     private void processEdges(String filePath) throws IOException {
         VisitorOrientedParser parser = new VisitorOrientedParser();
         BufferedReader buff = new BufferedReader(new FileReader(filePath));
-        String line = buff.readLine();
+        String trimmedLine, line = buff.readLine();
         Edge edge;
 
         while (line != null) {
-            if (isEdgeDescription(line)) {
-                String[] splitByEdge = line.split(EDGE_CHAR);
+            trimmedLine = line.trim();
+            if (isEdgeDescription(trimmedLine)) {
+                String[] splitByEdge = trimmedLine.split(EDGE_CHAR);
                 long src = Long.parseLong(splitByEdge[0].trim());
                 long dst = Long.parseLong(splitByEdge[1].trim().split(SPACE)[0]);
-                String label = line.split(LABEL)[1].split(QUOTE)[1];
+                String label = trimmedLine.split(LABEL)[1].split(QUOTE)[1];
 
                 int srcId = nodesById.get(src);
                 int dstId = nodesById.get(dst);
@@ -332,8 +333,8 @@ public class StateSpaceGraph {
                 edgesById.put(srcId + "->" + dstId, edge);
 
             } else if (isNodeDescription(line)) {
-                State state = parser.parse(line.trim().split(QUOTE)[1]);
-                long dotId = Long.parseLong(line.trim().split(SPACE)[0]);
+                State state = parser.parse(trimmedLine.split(QUOTE)[1]);
+                long dotId = Long.parseLong(trimmedLine.split(SPACE)[0]);
                 int nodeId = nodesById.get(dotId);
                 states[nodeId] = state;
             }
