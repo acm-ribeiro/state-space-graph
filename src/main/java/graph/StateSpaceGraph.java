@@ -27,7 +27,7 @@ public class StateSpaceGraph {
     private static int INITIAL_NODES = 1000;
     private static int INITIAL_EDGES = 30;
 
-    // complete & incomplete paths
+    // Complete & incomplete paths
     private static final int PATH_CATEGORIES = 2;
     private static final int COMPLETE = 0;
     private static final int INCOMPLETE = 1;
@@ -38,7 +38,7 @@ public class StateSpaceGraph {
     // Initial state index
     private static int INITIAL = 0;
 
-    private int finalState;           // final state index
+    private int finalState;            // final state index
     private int numNodes;             // number of nodes in the graph
     private List<Edge>[] outgoing;    // outgoing edges of all the graph's nodes
     private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
@@ -295,7 +295,8 @@ public class StateSpaceGraph {
 
         while (line != null) {
             if (isNodeDescription(line))
-                nodesById.put(Long.parseLong(line.split(SPACE)[0]), nodesById.size());
+                nodesById.put(Long.parseLong(line.trim().split(SPACE)[0]), nodesById.size());
+
             line = buff.readLine();
         }
 
@@ -317,7 +318,7 @@ public class StateSpaceGraph {
         while (line != null) {
             if (isEdgeDescription(line)) {
                 String[] splitByEdge = line.split(EDGE_CHAR);
-                long src = Long.parseLong(splitByEdge[0]);
+                long src = Long.parseLong(splitByEdge[0].trim());
                 long dst = Long.parseLong(splitByEdge[1].trim().split(SPACE)[0]);
                 String label = line.split(LABEL)[1].split(QUOTE)[1];
 
@@ -331,8 +332,8 @@ public class StateSpaceGraph {
                 edgesById.put(srcId + "->" + dstId, edge);
 
             } else if (isNodeDescription(line)) {
-                State state = parser.parse(line.split(QUOTE)[1]);
-                long dotId = Long.parseLong(line.split(SPACE)[0]);
+                State state = parser.parse(line.trim().split(QUOTE)[1]);
+                long dotId = Long.parseLong(line.trim().split(SPACE)[0]);
                 int nodeId = nodesById.get(dotId);
                 states[nodeId] = state;
             }

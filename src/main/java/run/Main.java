@@ -2,7 +2,6 @@ package run;
 
 import graph.StateSpaceGraph;
 
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
@@ -17,10 +16,12 @@ public class Main {
 
     public static void main (String[] args) {
         StateSpaceGraph ssg = new StateSpaceGraph(args[0]);
-        List<Deque<Integer>> paths = ssg.getPaths();
-
-        printGraph(ssg, paths);
-        printStats(ssg, paths);
+        //List<Deque<Integer>> paths = ssg.getPaths();
+        System.out.println(STATS);
+        System.out.printf("nodes      :   %d\n", ssg.getNumNodes());
+        System.out.printf("edges      :   %d\n", ssg.getNumEdges());
+        //printGraph(ssg, paths);
+        //printStats(ssg, paths);
     }
 
     /**
@@ -108,9 +109,9 @@ public class Main {
         System.out.println(STATS);
         System.out.printf("nodes      :   %d\n", ssg.getNumNodes());
         System.out.printf("edges      :   %d\n", ssg.getNumEdges());
-        System.out.printf("paths      :   %d\n", paths.size());
-        System.out.printf("avg size   :   %.3f\n", averagePathSize(paths));
-        System.out.printf("max size   :   %d\n", largestPathSize(paths));
-        System.out.printf("min size   :   %d\n", shortestPathSize(paths));
+//        System.out.printf("paths      :   %d\n", paths.size());
+//        System.out.printf("avg size   :   %.3f\n", averagePathSize(paths));
+//        System.out.printf("max size   :   %d\n", largestPathSize(paths));
+//        System.out.printf("min size   :   %d\n", shortestPathSize(paths));
     }
 }
