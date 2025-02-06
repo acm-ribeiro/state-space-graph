@@ -197,7 +197,7 @@ public class StateSpaceGraph {
      */
     public List<Deque<Integer>> getPaths() {
         List<Deque<Integer>>[] paths = pathsTo();
-        List<Deque<Integer>>[] from  = pathsFrom();
+        List<Deque<Integer>>[] from = pathsFrom();
 
         int last;
         for (Deque<Integer> path : paths[INCOMPLETE]) {
@@ -229,7 +229,7 @@ public class StateSpaceGraph {
 
         int src, dst = -1;
         while (it.hasNext()) {
-            src = i == 0? it.next() : dst;
+            src = i == 0 ? it.next() : dst;
             dst = it.next();
             transitions[i++] = edgesById.get(src + "->" + dst).getLabel();
         }
@@ -330,7 +330,7 @@ public class StateSpaceGraph {
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
 
-                edgesById.put(srcId + "->" + dstId, edge);
+                edgesById.put(srcId + EDGE_CHAR.trim() + dstId, edge);
 
             } else if (isNodeDescription(line)) {
                 State state = parser.parse(trimmedLine.split(QUOTE)[1]);
@@ -434,7 +434,7 @@ public class StateSpaceGraph {
             s.append(i).append(": {");
 
             for (Edge e : toPrint[i])
-                if(in)
+                if (in)
                     s.append(e.getSrc()).append("; ");
                 else
                     s.append(e.getDst()).append("; ");
@@ -456,7 +456,7 @@ public class StateSpaceGraph {
     public String nodesToString() {
         StringBuilder s = new StringBuilder();
 
-        for (Long id: nodesById.keySet())
+        for (Long id : nodesById.keySet())
             s.append(nodesById.get(id)).append(": ").append(id).append("\n");
 
         return s.toString();
