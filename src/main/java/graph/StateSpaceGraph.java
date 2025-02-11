@@ -2,6 +2,7 @@ package graph;
 
 import domain.State;
 import parser.VisitorOrientedParser;
+import pruning.PathPruner;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -40,9 +41,11 @@ public class StateSpaceGraph {
 
     private int finalState;            // final state index
     private int numNodes;             // number of nodes in the graph
+    private int numEdges;             // number of edges in the graph
     private List<Edge>[] outgoing;    // outgoing edges of all the graph's nodes
     private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
     private State[] states;
+
     private Map<Long, Integer> nodesById;
     private Map<String, Edge> edgesById;
 
@@ -83,9 +86,8 @@ public class StateSpaceGraph {
      * @return number of edges.
      */
     public int getNumEdges() {
-        return edgesById.size();
+        return numEdges;
     }
-
 
     /**
      * Returns the graph's initial state.
@@ -106,7 +108,7 @@ public class StateSpaceGraph {
      * @return both complete and incomplete paths.
      */
     @SuppressWarnings("unchecked")
-    public List<Deque<Integer>>[] pathsTo() {
+    private List<Deque<Integer>>[] pathsTo() {
         // Tracks whether nodes have been added to the FIFO
         boolean[] found = new boolean[numNodes];
         found[finalState] = true;
@@ -142,7 +144,6 @@ public class StateSpaceGraph {
                 } else {
                     paths[INCOMPLETE].add(upToChild);
                 }
-
             }
         }
 
@@ -156,7 +157,7 @@ public class StateSpaceGraph {
      *
      * @return all the paths starting at a node.
      */
-    public List<Deque<Integer>>[] pathsFrom() {
+    private List<Deque<Integer>>[] pathsFrom() {
         List<Deque<Integer>>[] from = initialisePaths(finalState);
 
         // Tracks whether nodes have been added to the FIFO
@@ -192,12 +193,13 @@ public class StateSpaceGraph {
 
     /**
      * Completes all the paths.
+     * @param numPaths the number of paths to return.
      *
      * @return complete paths.
      */
-    public List<Deque<Integer>> getPaths() {
+    public List<Deque<Integer>> getPaths(int numPaths) {
         List<Deque<Integer>>[] paths = pathsTo();
-        List<Deque<Integer>>[] from = pathsFrom();
+        List<Deque<Integer>>[] from  = pathsFrom();
 
         int last;
         for (Deque<Integer> path : paths[INCOMPLETE]) {
@@ -211,7 +213,7 @@ public class StateSpaceGraph {
             }
         }
 
-        return paths[COMPLETE];
+        return PathPruner.sample(paths[COMPLETE], numPaths);
     }
 
     /**
@@ -279,7 +281,11 @@ public class StateSpaceGraph {
 
         states = new State[numNodes];
         finalState = numNodes - 1;
-        edgesById = new HashMap<>();
+        try {
+            edgesById = new HashMap<>(numEdges);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -290,13 +296,15 @@ public class StateSpaceGraph {
      * @throws FileNotFoundException when the DOT is not found.
      */
     private void countNodes(String filePath) throws IOException {
+        numEdges = 0;
         BufferedReader buff = new BufferedReader(new FileReader(filePath));
         String line = buff.readLine();
 
         while (line != null) {
             if (isNodeDescription(line))
                 nodesById.put(Long.parseLong(line.trim().split(SPACE)[0]), nodesById.size());
-
+            else if (isEdgeDescription(line))
+                numEdges++;
             line = buff.readLine();
         }
 
@@ -435,9 +443,13 @@ public class StateSpaceGraph {
 
             for (Edge e : toPrint[i])
                 if (in)
-                    s.append(e.getSrc()).append("; ");
+                    s.append(e.getSrc())
+                            .append(" (").append(e.getLabel()).append(")")
+                            .append("; ");
                 else
-                    s.append(e.getDst()).append("; ");
+                    s.append(e.getDst())
+                            .append(" (").append(e.getLabel()).append(")")
+                            .append("; ");
 
             if (!toPrint[i].isEmpty())
                 s.delete(s.length() - 2, s.length());
@@ -460,5 +472,21 @@ public class StateSpaceGraph {
             s.append(nodesById.get(id)).append(": ").append(id).append("\n");
 
         return s.toString();
+    }
+
+    /**
+     * Prints the number of nodes and edges in the graph. Also prints the number of complete paths,
+     * the average path size, largest and shortest path sizes of the path samples.
+     *
+     * @param paths collection.
+     */
+    public void printStats(List<Deque<Integer>> paths) {
+        System.out.println("------------------------- STATS -------------------------");
+        System.out.printf("nodes      :   %d\n", getNumNodes());
+        System.out.printf("edges      :   %d\n", getNumEdges());
+        System.out.printf("paths      :   %d\n", paths.size());
+        System.out.printf("avg size   :   %.3f\n", PathPruner.averagePathSize(paths));
+        System.out.printf("max size   :   %d\n",   PathPruner.largestPathSize(paths));
+        System.out.printf("min size   :   %d\n",   PathPruner.shortestPathSize(paths));
     }
 }
