@@ -4,13 +4,17 @@ import java.util.*;
 
 public class PathPruner {
 
+    private static final int NUM_PATHS = 50;
+    private static final int INITIAL_FREQ = 0;
+
+
     private static Map<Integer, List<Deque<Integer>>> pathsBySize = new HashMap<>();
 
     /**
      * Samples the given path collection according to their probability distribution.
      *
-     * @param paths    path collection.
-     * @param samples  number of paths to sample.
+     * @param paths   path collection.
+     * @param samples number of paths to sample.
      * @return a list of the sample paths of size [samples].
      */
     public static List<Deque<Integer>> sample(List<Deque<Integer>> paths, int samples) {
@@ -19,22 +23,30 @@ public class PathPruner {
         int maxSize = largestPathSize(paths);
         Map<Integer, Double> cumulative = getCumulativeProbabilities(paths, minSize, maxSize);
 
-        // choosing a path based on its cumulative probability
+        // Choosing a path based on its cumulative probability
         double rnd;
+        Set<Map.Entry<Integer, Double>> entries;
+        Iterator<Map.Entry<Integer, Double>> it;
+        Map.Entry<Integer, Double> e;
+
         for (int i = 0; i < samples; i++) {
+            entries = cumulative.entrySet();
+            it = entries.iterator();
+            e = null;
+
+            // We chose to sample from a paths with size pathSize based on the first value of the
+            // cumulative probability that is greater or equal to rnd.
             rnd = Math.random();
-
             int pathSize = (int) averagePathSize(paths);
-            double prob;
-            for (Map.Entry<Integer, Double> e : cumulative.entrySet()) {
-                prob = e.getValue();
-                if (prob >= rnd) {
-                    pathSize = e.getKey();
-                    break;
-                }
-            }
+            double prob = 0;
 
-            // Randomly choosing a path of the found size
+            while (it.hasNext() && prob < rnd) {
+                e = it.next();
+                prob = e.getValue();
+            }
+            pathSize = e != null ? e.getKey() : pathSize;
+
+            // Randomly sampling a path of previously chosen pathSize
             int pathIndex = (int) (Math.random() * pathsBySize.get(pathSize).size());
             sampledPaths.add(pathsBySize.get(pathSize).get(pathIndex));
         }
@@ -50,8 +62,7 @@ public class PathPruner {
      * @param max   largest path size
      * @return cumulative probabilities.
      */
-    private static Map<Integer, Double> getCumulativeProbabilities(List<Deque<Integer>> paths, int min,
-                                                            int max) {
+    private static Map<Integer, Double> getCumulativeProbabilities(List<Deque<Integer>> paths, int min, int max) {
         Map<Integer, Integer> absolute = getAbsoluteFrequencies(paths, min, max);
         Map<Integer, Double> cumulative = new HashMap<>();
 
@@ -89,14 +100,14 @@ public class PathPruner {
      * @return absolute frequencies
      */
     private static Map<Integer, Integer> getAbsoluteFrequencies(List<Deque<Integer>> paths,
-                                                               int min, int max) {
+                                                                int min, int max) {
         Map<Integer, Integer> absoluteFrequency = new HashMap<>();
         pathsBySize = new HashMap<>();
 
         // map initialisation
         for (int i = min; i <= max; i++) {
-            absoluteFrequency.put(i, 0);
-            pathsBySize.put(i, new ArrayList<>());
+            absoluteFrequency.put(i, INITIAL_FREQ);
+            pathsBySize.put(i, new ArrayList<>(NUM_PATHS));
         }
 
         List<Deque<Integer>> current;
@@ -119,8 +130,8 @@ public class PathPruner {
     public static int largestPathSize(List<Deque<Integer>> paths) {
         int max = 0;
 
-        for (Deque<Integer> path: paths)
-            if(path.size() > max)
+        for (Deque<Integer> path : paths)
+            if (path.size() > max)
                 max = path.size();
 
         return max;
@@ -135,8 +146,8 @@ public class PathPruner {
     public static int shortestPathSize(List<Deque<Integer>> paths) {
         int min = (int) averagePathSize(paths);
 
-        for (Deque<Integer> path: paths)
-            if(path.size() < min)
+        for (Deque<Integer> path : paths)
+            if (path.size() < min)
                 min = path.size();
 
         return min;
@@ -151,11 +162,9 @@ public class PathPruner {
     public static double averagePathSize(List<Deque<Integer>> paths) {
         long sum = 0L;
 
-        for (Deque<Integer> path: paths)
+        for (Deque<Integer> path : paths)
             sum += path.size();
 
         return (double) sum / paths.size();
     }
-
-
 }

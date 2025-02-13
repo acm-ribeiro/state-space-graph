@@ -12,6 +12,14 @@ import java.util.*;
 
 public class StateSpaceGraph {
 
+    // Debug
+    private static final String NODES = "------------------------- NODES -------------------------";
+    private static final String EDGES = "------------------------- EDGES -------------------------";
+    private static final String PATHS = "------------------------- PATHS -------------------------";
+    private static final String GRAPH = "------------------------- GRAPH -------------------------";
+    private static final String STATS = "------------------------- STATS -------------------------";
+    private static final String SPLIT = "---------------------------------------------------------";
+
     // DOT processing
     private static final String EDGE_CHAR = " -> ";
     private static final String LABEL = "label=";
@@ -33,18 +41,21 @@ public class StateSpaceGraph {
     private static final int COMPLETE = 0;
     private static final int INCOMPLETE = 1;
 
-    private static final int NUM_PATHS = 10;
-    private static final int PATH_LENGTH = 10;
+    // A graph with 2k nodes results in 2M paths.
+    private static final int NUM_PATHS = 10000;
+
+    // It's common to have paths sizes ranging from 20-30
+    private static final int PATH_LENGTH = 30;
 
     // Initial state index
     private static int INITIAL = 0;
 
-    private int finalState;            // final state index
-    private int numNodes;             // number of nodes in the graph
-    private int numEdges;             // number of edges in the graph
-    private List<Edge>[] outgoing;    // outgoing edges of all the graph's nodes
-    private List<Edge>[] incoming;    // incoming edges of all the graph's nodes
-    private State[] states;
+    private int finalState;            // Final state index
+    private int numNodes;             // Number of nodes in the graph
+    private int numEdges;             // Number of edges in the graph
+    private List<Edge>[] outgoing;    // Outgoing edges of all the graph's nodes
+    private List<Edge>[] incoming;    // Incoming edges of all the graph's nodes
+    private State[] states;           // TLA+ states
 
     private Map<Long, Integer> nodesById;
     private Map<String, Edge> edgesById;
@@ -127,12 +138,13 @@ public class StateSpaceGraph {
         upTo[INITIAL].add(INITIAL);
 
         int parent, child;
+        Deque<Integer> upToChild;
         while (!fifo.isEmpty()) {
             parent = fifo.poll();
 
             for (Edge e : outgoing[parent]) {
                 child = e.getDst();
-                Deque<Integer> upToChild = new ArrayDeque<>(upTo[parent]);
+                upToChild = new ArrayDeque<>(upTo[parent]);
                 upToChild.offer(child);
 
                 if (!found[child]) {
@@ -193,13 +205,13 @@ public class StateSpaceGraph {
 
     /**
      * Completes all the paths.
-     * @param numPaths the number of paths to return.
      *
+     * @param numPaths the number of paths to return.
      * @return complete paths.
      */
     public List<Deque<Integer>> getPaths(int numPaths) {
         List<Deque<Integer>>[] paths = pathsTo();
-        List<Deque<Integer>>[] from  = pathsFrom();
+        List<Deque<Integer>>[] from = pathsFrom();
 
         int last;
         for (Deque<Integer> path : paths[INCOMPLETE]) {
@@ -260,7 +272,6 @@ public class StateSpaceGraph {
 
         return paths;
     }
-
 
     // Graph construction
 
@@ -385,8 +396,7 @@ public class StateSpaceGraph {
         return line.contains(EDGE_CHAR);
     }
 
-
-    // Debugging
+    // Debugging - TODO remove
 
     /**
      * Returns a string representation of the graph's edges.
@@ -481,12 +491,41 @@ public class StateSpaceGraph {
      * @param paths collection.
      */
     public void printStats(List<Deque<Integer>> paths) {
-        System.out.println("------------------------- STATS -------------------------");
+        System.out.println(STATS);
         System.out.printf("nodes      :   %d\n", getNumNodes());
         System.out.printf("edges      :   %d\n", getNumEdges());
         System.out.printf("paths      :   %d\n", paths.size());
         System.out.printf("avg size   :   %.3f\n", PathPruner.averagePathSize(paths));
-        System.out.printf("max size   :   %d\n",   PathPruner.largestPathSize(paths));
-        System.out.printf("min size   :   %d\n",   PathPruner.shortestPathSize(paths));
+        System.out.printf("max size   :   %d\n", PathPruner.largestPathSize(paths));
+        System.out.printf("min size   :   %d\n", PathPruner.shortestPathSize(paths));
+        System.out.println(SPLIT);
     }
+
+    /**
+     * Prints graph data.
+     *
+     * @param paths generated paths.
+     */
+    public void printGraph(List<Deque<Integer>> paths) {
+        // Nodes by id
+        System.out.println(NODES);
+        System.out.println(nodesToString());
+
+        // Edges by id
+        System.out.println(EDGES);
+        System.out.println(edgesToString());
+
+        // Incoming
+        System.out.println(GRAPH);
+        System.out.println(toString(true));
+
+        // Outgoing
+        System.out.println(SPLIT);
+        System.out.println(toString(false));
+
+        // Paths
+        System.out.println(PATHS);
+        System.out.println(pathsToString(paths));
+    }
+
 }
