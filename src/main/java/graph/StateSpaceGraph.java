@@ -35,6 +35,7 @@ public class StateSpaceGraph {
     // Initial sizes
     private static int INITIAL_NODES = 1000;
     private static int INITIAL_EDGES = 30;
+    private static int INITIAL_PARAMS = 10;
 
     // Complete & incomplete paths
     private static final int PATH_CATEGORIES = 2;
@@ -245,7 +246,7 @@ public class StateSpaceGraph {
         while (it.hasNext()) {
             src = i == 0 ? it.next() : dst;
             dst = it.next();
-            transitions[i++] = edgesById.get(src + "->" + dst).getLabel();
+            transitions[i++] = edgesById.get(src + "->" + dst).getTransition();
         }
 
         return transitions;
@@ -340,12 +341,14 @@ public class StateSpaceGraph {
                 String[] splitByEdge = trimmedLine.split(EDGE_CHAR);
                 long src = Long.parseLong(splitByEdge[0].trim());
                 long dst = Long.parseLong(splitByEdge[1].trim().split(SPACE)[0]);
-                String label = trimmedLine.split(LABEL)[1].split(QUOTE)[1];
+                String labelField = trimmedLine.split(LABEL)[1].split(QUOTE)[1];
+                String transition = labelField.split("\\(")[0];
 
                 int srcId = nodesById.get(src);
                 int dstId = nodesById.get(dst);
-                edge = new Edge(srcId, dstId, label);
-
+                String[] parameters = processParameters(labelField);
+                edge = new Edge(srcId, dstId, transition, parameters);
+                System.out.println(edge);
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
 
@@ -365,12 +368,23 @@ public class StateSpaceGraph {
     }
 
     /**
+     * Process transition operation parameters
+     * @param label edge label description (dot)
+     *
+     * @return an array of TLA model value IDs.
+     */
+    private String[] processParameters(String label) {
+        // Split by "("; remove ")"; then split by ","
+        return label.split("\\(")[1].replace(")", "").split(",");
+    }
+
+    /**
      * Adds an edge from all the final states to the super sink node.
      */
     private void addFinalState() {
         for (int i = 0; i < outgoing.length - 1; i++)
             if (outgoing[i].isEmpty()) {
-                Edge edge = new Edge(i, finalState, FINAL);
+                Edge edge = new Edge(i, finalState, FINAL, new String[INITIAL_PARAMS]);
                 outgoing[i].add(edge);
                 incoming[finalState].add(edge);
             }
@@ -409,7 +423,7 @@ public class StateSpaceGraph {
         for (Map.Entry<String, Edge> e : edgesById.entrySet())
             s.append(e.getKey())
                     .append(": ")
-                    .append(e.getValue().getLabel())
+                    .append(e.getValue().getTransition())
                     .append("\n");
 
         return s.toString();
@@ -454,11 +468,11 @@ public class StateSpaceGraph {
             for (Edge e : toPrint[i])
                 if (in)
                     s.append(e.getSrc())
-                            .append(" (").append(e.getLabel()).append(")")
+                            .append(" (").append(e.getTransition()).append(")")
                             .append("; ");
                 else
                     s.append(e.getDst())
-                            .append(" (").append(e.getLabel()).append(")")
+                            .append(" (").append(e.getTransition()).append(")")
                             .append("; ");
 
             if (!toPrint[i].isEmpty())
@@ -503,10 +517,8 @@ public class StateSpaceGraph {
 
     /**
      * Prints graph data.
-     *
-     * @param paths generated paths.
      */
-    public void printGraph(List<Deque<Integer>> paths) {
+    public void printGraph() {
         // Nodes by id
         System.out.println(NODES);
         System.out.println(nodesToString());
@@ -522,10 +534,12 @@ public class StateSpaceGraph {
         // Outgoing
         System.out.println(SPLIT);
         System.out.println(toString(false));
+    }
 
-        // Paths
+    public void printPaths(List<Deque<Integer>> paths) {
         System.out.println(PATHS);
         System.out.println(pathsToString(paths));
+
     }
 
 }

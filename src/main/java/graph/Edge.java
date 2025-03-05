@@ -1,14 +1,19 @@
 package graph;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Edge {
 
-    private int src, dst;           // edge's source and destination
-    private String label;           // edge's id and label (operation id)
+    private int src, dst;             // edge's source and destination
+    private String transition;        // edge's id and label (operation id)
+    private String[] parameters;  // transition operation parameters
 
-    public Edge(int src, int dst, String label) {
+    public Edge(int src, int dst, String transition, String[] parameters) {
         this.src = src;
         this.dst = dst;
-        this.label = label;
+        this.transition = transition;
+        this.parameters = parameters;
     }
 
     /**
@@ -31,12 +36,21 @@ public class Edge {
     }
 
     /**
-     * Returns the edge label.
+     * Returns the edge transition operation ID.
      *
-     * @return edge label.
+     * @return edge transition.
      */
-    public String getLabel() {
-        return label;
+    public String getTransition() {
+        return transition;
+    }
+
+    /**
+     * Returns the transition operation parameters.
+     *
+     * @return parameters.
+     */
+    public String[] getParameters() {
+        return parameters;
     }
 
     /**
@@ -53,6 +67,6 @@ public class Edge {
 
     @Override
     public String toString() {
-        return src + " -> " + dst + ", label: " + label;
+        return src + " -> " + dst + ": " + transition + Arrays.toString(parameters);
     }
 }
