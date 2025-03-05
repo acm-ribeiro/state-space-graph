@@ -348,7 +348,7 @@ public class StateSpaceGraph {
                 int dstId = nodesById.get(dst);
                 String[] parameters = processParameters(labelField);
                 edge = new Edge(srcId, dstId, transition, parameters);
-                System.out.println(edge);
+                
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
 
