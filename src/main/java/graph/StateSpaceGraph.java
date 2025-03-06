@@ -230,13 +230,14 @@ public class StateSpaceGraph {
     }
 
     /**
-     * Returns an array of the path transitions.
+     * Returns an array of the edge transitions.
      *
      * @param path of nodes in the graph.
-     * @return array of path transitions.
+     * @return array of edge transitions.
      */
-    public String[] getPathTransitions(Deque<Integer> path) {
-        String[] transitions = new String[path.size() - 2]; // removing initial and final states
+    public Edge[] getPathEdges(Deque<Integer> path) {
+        Edge[] edges = new Edge[path.size() - 2]; // removing initial and final states
+
         path.pollLast();
 
         int i = 0;
@@ -246,10 +247,10 @@ public class StateSpaceGraph {
         while (it.hasNext()) {
             src = i == 0 ? it.next() : dst;
             dst = it.next();
-            transitions[i++] = edgesById.get(src + "->" + dst).getTransition();
+            edges[i++] = edgesById.get(src + "->" + dst);
         }
 
-        return transitions;
+        return edges;
     }
 
     /**
@@ -348,7 +349,7 @@ public class StateSpaceGraph {
                 int dstId = nodesById.get(dst);
                 String[] parameters = processParameters(labelField);
                 edge = new Edge(srcId, dstId, transition, parameters);
-                
+
                 outgoing[srcId].add(edge);
                 incoming[dstId].add(edge);
 
