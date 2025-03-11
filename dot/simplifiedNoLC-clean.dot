@@ -1,0 +1,25 @@
+strict digraph DiskGraph {
+node [shape=box,style=rounded]
+nodesep=0.35;
+subgraph cluster_graph {
+color="white";
+181079032517841395 [label="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> FALSE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> FALSE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])",style = filled]
+-7164724653827049689 -> 395064465223958822 [label="deleteEnrollment(e1)",color="black",fontcolor="black"];
+-7164724653827049689 [label="/\\ f = TRUE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {p1}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {t1}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> TRUE])",tooltip="/\\ f = TRUE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {p1}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {t1}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> TRUE])"];
+-8193688901247397505 -> 181079032517841395 [label="deletePlayer(p1)",color="black",fontcolor="black"];
+-8193688901247397505 -> 395064465223958822 [label="postTournament(t1)",color="black",fontcolor="black"];
+-8193688901247397505 [label="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> FALSE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])",tooltip="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> FALSE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])"];
+-8524482618179976790 -> 181079032517841395 [label="deleteTournament(t1)",color="black",fontcolor="black"];
+-8524482618179976790 -> 395064465223958822 [label="postPlayer(p1)",color="black",fontcolor="black"];
+-8524482618179976790 [label="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> FALSE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])",tooltip="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> FALSE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])"];
+181079032517841395 -> -8193688901247397505 [label="postPlayer(p1)",color="black",fontcolor="black"];
+181079032517841395 -> -8524482618179976790 [label="postTournament(t1)",color="black",fontcolor="black"];
+395064465223958822 -> -7164724653827049689 [label="postEnrollment(e1,t1,p1)",color="black",fontcolor="black"];
+395064465223958822 -> -8193688901247397505 [label="deleteTournament(t1)",color="black",fontcolor="black"];
+395064465223958822 -> -8524482618179976790 [label="deletePlayer(p1)",color="black",fontcolor="black"];
+395064465223958822 [label="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])",tooltip="/\\ f = FALSE/\\ ensures = TRUE/\\ tournaments = (t1 :> [tid |-> t1, s |-> TRUE, ps |-> {}, c |-> 2])/\\ schemaMapping = [ tournaments |-> Tournament,  players |-> Player,  enrollments |-> Enrollment ]/\\ players = (p1 :> [pid |-> p1, s |-> TRUE, a |-> 2, ts |-> {}])/\\ enrollments = (e1 :> [eid |-> e1, pid |-> p1, tid |-> t1, s |-> FALSE])"];
+{rank = same; -7164724653827049689;}
+{rank = same; -8524482618179976790;-8193688901247397505;}
+{rank = same; 181079032517841395;}
+{rank = same; 395064465223958822;}
+}
