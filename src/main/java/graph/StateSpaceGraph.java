@@ -67,7 +67,6 @@ public class StateSpaceGraph {
             countNodes(filePath);
             initialiseStructures();
             processEdges(filePath);
-            addFinalState();
         } catch (IOException e) {
             System.err.printf(NOT_FOUND, filePath);
         }
@@ -226,7 +225,11 @@ public class StateSpaceGraph {
             }
         }
 
-        return PathPruner.sample(paths[COMPLETE], numPaths);
+        // Removing duplicates: the user may ask for more paths than the total number of distinct
+        // paths in the graph.
+        return PathPruner.sample(paths[COMPLETE], numPaths).stream()
+                .distinct()
+                .toList();
     }
 
     /**
@@ -360,6 +363,13 @@ public class StateSpaceGraph {
                 long dotId = Long.parseLong(trimmedLine.split(SPACE)[0]);
                 int nodeId = nodesById.get(dotId);
                 states[nodeId] = state;
+
+                // Adds an edge from all the final states to the super sink node.
+                if (state.isFinalState()) {
+                    edge = new Edge(nodeId, finalState, FINAL, new String[INITIAL_PARAMS]);
+                    outgoing[nodeId].add(edge);
+                    incoming[finalState].add(edge);
+                }
             }
 
             line = buff.readLine();
@@ -370,25 +380,13 @@ public class StateSpaceGraph {
 
     /**
      * Process transition operation parameters
-     * @param label edge label description (dot)
      *
+     * @param label  edge label description (dot). E.g. label="postEnrollment(e1, t1, p1)"
      * @return an array of TLA model value IDs.
      */
     private String[] processParameters(String label) {
         // Split by "("; remove ")"; then split by ","
         return label.split("\\(")[1].replace(")", "").split(",");
-    }
-
-    /**
-     * Adds an edge from all the final states to the super sink node.
-     */
-    private void addFinalState() {
-        for (int i = 0; i < outgoing.length - 1; i++)
-            if (outgoing[i].isEmpty()) {
-                Edge edge = new Edge(i, finalState, FINAL, new String[INITIAL_PARAMS]);
-                outgoing[i].add(edge);
-                incoming[finalState].add(edge);
-            }
     }
 
     /**
@@ -425,6 +423,7 @@ public class StateSpaceGraph {
             s.append(e.getKey())
                     .append(": ")
                     .append(e.getValue().getTransition())
+                    .append(Arrays.toString(e.getValue().getParameters()))
                     .append("\n");
 
         return s.toString();
@@ -437,8 +436,8 @@ public class StateSpaceGraph {
      * @return representation of the given structure
      */
     public String pathsToString(List<Deque<Integer>> paths) {
-        StringBuilder s = new StringBuilder("[");
-        s.append(paths.size()).append("]\n");
+        StringBuilder s = new StringBuilder("Number of paths: ");
+        s.append(paths.size()).append("\n");
 
         for (Deque<Integer> path : paths) {
             s.append("{");
@@ -503,16 +502,20 @@ public class StateSpaceGraph {
      * Prints the number of nodes and edges in the graph. Also prints the number of complete paths,
      * the average path size, largest and shortest path sizes of the path samples.
      *
-     * @param paths collection.
+     * @param paths        collection.
+     * @param wanted       number of paths asked by the user.
+     * @param elapsedTime  total time elapsed since the start of the program, in minutes.
      */
-    public void printStats(List<Deque<Integer>> paths) {
+    public void printStats(List<Deque<Integer>> paths, int wanted, float elapsedTime) {
         System.out.println(STATS);
-        System.out.printf("nodes      :   %d\n", getNumNodes());
-        System.out.printf("edges      :   %d\n", getNumEdges());
-        System.out.printf("paths      :   %d\n", paths.size());
-        System.out.printf("avg size   :   %.3f\n", PathPruner.averagePathSize(paths));
-        System.out.printf("max size   :   %d\n", PathPruner.largestPathSize(paths));
-        System.out.printf("min size   :   %d\n", PathPruner.shortestPathSize(paths));
+        System.out.printf("nodes           :   %d\n", getNumNodes());
+        System.out.printf("edges           :   %d\n", getNumEdges());
+        System.out.printf("wanted paths    :   %d\n", wanted);
+        System.out.printf("distinct paths  :   %d\n", paths.size());
+        System.out.printf("avg size        :   %d\n", Math.round(PathPruner.averagePathSize(paths)));
+        System.out.printf("max size        :   %d\n", PathPruner.largestPathSize(paths));
+        System.out.printf("min size        :   %d\n", PathPruner.shortestPathSize(paths));
+        System.out.printf("elapsed time    :   %.2f mins\n", elapsedTime);
         System.out.println(SPLIT);
     }
 
@@ -528,19 +531,15 @@ public class StateSpaceGraph {
         System.out.println(EDGES);
         System.out.println(edgesToString());
 
-        // Incoming
+        // Incoming and Outgoing structures
         System.out.println(GRAPH);
-        System.out.println(toString(true));
-
-        // Outgoing
-        System.out.println(SPLIT);
-        System.out.println(toString(false));
+        System.out.println(toString(true));  // incoming
+        System.out.println(toString(false)); // outgoing
     }
 
     public void printPaths(List<Deque<Integer>> paths) {
         System.out.println(PATHS);
         System.out.println(pathsToString(paths));
-
     }
 
 }

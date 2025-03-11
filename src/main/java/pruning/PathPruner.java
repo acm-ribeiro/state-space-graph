@@ -7,7 +7,6 @@ public class PathPruner {
     private static final int NUM_PATHS = 50;
     private static final int INITIAL_FREQ = 0;
 
-
     private static Map<Integer, List<Deque<Integer>>> pathsBySize = new HashMap<>();
 
     /**
@@ -24,7 +23,8 @@ public class PathPruner {
         Map<Integer, Double> cumulative = getCumulativeProbabilities(paths, minSize, maxSize);
 
         // Choosing a path based on its cumulative probability
-        double rnd;
+        double rnd, prob;
+        int pathSize, pathIndex;
         Set<Map.Entry<Integer, Double>> entries;
         Iterator<Map.Entry<Integer, Double>> it;
         Map.Entry<Integer, Double> e;
@@ -37,8 +37,8 @@ public class PathPruner {
             // We chose to sample from a paths with size pathSize based on the first value of the
             // cumulative probability that is greater or equal to rnd.
             rnd = Math.random();
-            int pathSize = (int) averagePathSize(paths);
-            double prob = 0;
+            pathSize = (int) averagePathSize(paths);
+            prob = 0;
 
             while (it.hasNext() && prob < rnd) {
                 e = it.next();
@@ -47,7 +47,7 @@ public class PathPruner {
             pathSize = e != null ? e.getKey() : pathSize;
 
             // Randomly sampling a path of previously chosen pathSize
-            int pathIndex = (int) (Math.random() * pathsBySize.get(pathSize).size());
+            pathIndex = (int) (Math.random() * pathsBySize.get(pathSize).size());
             sampledPaths.add(pathsBySize.get(pathSize).get(pathIndex));
         }
 
@@ -104,7 +104,7 @@ public class PathPruner {
         Map<Integer, Integer> absoluteFrequency = new HashMap<>();
         pathsBySize = new HashMap<>();
 
-        // map initialisation
+        // Map initialisation
         for (int i = min; i <= max; i++) {
             absoluteFrequency.put(i, INITIAL_FREQ);
             pathsBySize.put(i, new ArrayList<>(NUM_PATHS));
