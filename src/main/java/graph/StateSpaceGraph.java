@@ -502,6 +502,7 @@ public class StateSpaceGraph {
      * Prints the number of nodes and edges in the graph. Also prints the number of complete paths,
      * the average path size, largest and shortest path sizes of the path samples.
      *
+     * @param fileName      dot file name.
      * @param paths        collection.
      * @param wanted       number of paths asked by the user.
      * @param elapsedTime  total time elapsed since the start of the program, in minutes.
