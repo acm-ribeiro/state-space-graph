@@ -506,8 +506,10 @@ public class StateSpaceGraph {
      * @param wanted       number of paths asked by the user.
      * @param elapsedTime  total time elapsed since the start of the program, in minutes.
      */
-    public void printStats(List<Deque<Integer>> paths, int wanted, float elapsedTime) {
+    public void printStats(String fileName, List<Deque<Integer>> paths, int wanted,
+                           float elapsedTime) {
         System.out.println(STATS);
+        System.out.printf("dot file name    :   %s\n", fileName);
         System.out.printf("nodes           :   %d\n", getNumNodes());
         System.out.printf("edges           :   %d\n", getNumEdges());
         System.out.printf("wanted paths    :   %d\n", wanted);
